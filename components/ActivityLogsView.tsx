@@ -1,6 +1,7 @@
 
 import React, { useMemo } from 'react';
 import { History, MessageSquare, User as UserIcon, Clock, ChevronRight, Activity } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { Task, TaskStatus, TaskActivity } from '../types';
 
 interface ActivityLogsViewProps {
@@ -120,7 +121,9 @@ const ActivityLogsView: React.FC<ActivityLogsViewProps> = ({ tasks, activities, 
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-slate-600 font-medium leading-relaxed">{log.action}</p>
+                    <div className="text-sm text-slate-600 font-medium leading-relaxed prose prose-sm max-w-none">
+                      <ReactMarkdown>{log.action}</ReactMarkdown>
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-3 flex-shrink-0">

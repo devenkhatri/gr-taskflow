@@ -530,7 +530,7 @@ const App: React.FC = () => {
               <div className="p-6 border-b border-slate-50 flex flex-col sm:flex-row gap-4 justify-between items-center bg-slate-50/30">
                 <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                   <List size={22} className="text-indigo-500" />
-                  Registry Overview
+                  Recent Tasks Overview
                 </h3>
                 <button
                   onClick={() => setViewMode('tasks')}
@@ -550,7 +550,7 @@ const App: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {filteredTasks.slice(0, 5).map((task) => (
+                    {filteredTasks.slice(0, 10).map((task) => (
                       <tr
                         key={task.taskId + task.messageTimestamp}
                         className="hover:bg-indigo-50/30 transition-colors cursor-pointer"
