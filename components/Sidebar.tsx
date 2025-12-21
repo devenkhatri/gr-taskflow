@@ -1,50 +1,70 @@
 
 import React from 'react';
-import { LayoutDashboard, CheckCircle2, ClipboardList, Clock, Settings, User } from 'lucide-react';
+import { LayoutDashboard, CheckCircle2, ClipboardList, Clock, Settings, User, Columns3 } from 'lucide-react';
 
-const Sidebar: React.FC = () => {
+interface SidebarProps {
+  currentView: 'dashboard' | 'kanban';
+  onViewChange: (view: 'dashboard' | 'kanban') => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
   const menuItems = [
-    { icon: <LayoutDashboard size={20} />, label: 'Overview', active: true },
-    { icon: <ClipboardList size={20} />, label: 'Tasks', active: false },
-    { icon: <CheckCircle2 size={20} />, label: 'Completed', active: false },
-    { icon: <Clock size={20} />, label: 'Logs', active: false },
-    { icon: <User size={20} />, label: 'Team', active: false },
-    { icon: <Settings size={20} />, label: 'Settings', active: false },
+    { id: 'dashboard', icon: <LayoutDashboard size={20} />, label: 'Analytics' },
+    { id: 'kanban', icon: <Columns3 size={20} />, label: 'Kanban Board' },
+    { id: 'tasks', icon: <ClipboardList size={20} />, label: 'All Tasks' },
+    { id: 'completed', icon: <CheckCircle2 size={20} />, label: 'Completed' },
+    { id: 'logs', icon: <Clock size={20} />, label: 'Activity Logs' },
   ];
 
   return (
-    <div className="w-64 bg-white h-screen border-r border-slate-200 flex flex-col fixed left-0 top-0">
+    <div className="w-64 bg-white h-full border-r border-slate-200 flex flex-col flex-shrink-0 z-20">
       <div className="p-6 border-b border-slate-100">
         <div className="flex items-center gap-2">
-          <div className="bg-indigo-600 p-2 rounded-lg">
+          <div className="bg-indigo-600 p-2 rounded-lg shadow-lg shadow-indigo-100">
             <ClipboardList className="text-white" size={24} />
           </div>
-          <span className="text-xl font-bold text-slate-800">TaskFlow</span>
+          <span className="text-xl font-bold text-slate-800 tracking-tight">TaskFlow</span>
         </div>
       </div>
-      <nav className="flex-1 p-4 flex flex-col gap-2">
-        {menuItems.map((item, idx) => (
+      <nav className="flex-1 p-4 flex flex-col gap-1.5">
+        {menuItems.map((item) => (
           <button
-            key={idx}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-              item.active 
+            key={item.id}
+            onClick={() => (item.id === 'dashboard' || item.id === 'kanban') && onViewChange(item.id as any)}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
+              currentView === item.id 
                 ? 'bg-indigo-50 text-indigo-700 font-semibold' 
                 : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
             }`}
           >
-            {item.icon}
+            <span className={`${currentView === item.id ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'}`}>
+              {item.icon}
+            </span>
             <span>{item.label}</span>
           </button>
         ))}
+        
+        <div className="mt-8 px-4 mb-2">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Management</p>
+        </div>
+        <button className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all">
+          <User size={20} className="text-slate-400" />
+          <span>Team Members</span>
+        </button>
+        <button className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all">
+          <Settings size={20} className="text-slate-400" />
+          <span>Settings</span>
+        </button>
       </nav>
+      
       <div className="p-4 border-t border-slate-100">
-        <div className="bg-slate-50 p-4 rounded-xl flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-slate-300 flex items-center justify-center text-slate-600 font-bold">
+        <div className="bg-slate-50 p-4 rounded-2xl flex items-center gap-3 border border-slate-100">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold shadow-sm">
             DG
           </div>
-          <div>
-            <p className="text-sm font-semibold text-slate-800">Deven Goratela</p>
-            <p className="text-xs text-slate-500">Admin</p>
+          <div className="overflow-hidden">
+            <p className="text-sm font-bold text-slate-800 truncate">Deven Goratela</p>
+            <p className="text-xs text-slate-500">Workspace Admin</p>
           </div>
         </div>
       </div>

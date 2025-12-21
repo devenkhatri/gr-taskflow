@@ -1,43 +1,144 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-  PieChart, Pie, Cell, Legend 
+  BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
+  PieChart as RechartsPieChart, Pie, Cell, Legend 
 } from 'recharts';
 import { 
   Search, Filter, Plus, Clock, AlertCircle, CheckCircle2, 
-  Timer, MoreVertical, ExternalLink 
+  Timer, MoreVertical, ExternalLink, Loader2, RefreshCw, LayoutGrid, List, BarChart
 } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import StatCard from './components/StatCard';
 import TaskDetail from './components/TaskDetail';
-import { TASKS, ACTIVITIES } from './data';
-import { Task, TaskStatus } from './types';
+import KanbanBoard from './components/KanbanBoard';
+import { Task, TaskStatus, TaskActivity } from './types';
 
 const COLORS = ['#4f46e5', '#8b5cf6', '#f59e0b', '#3b82f6', '#10b981'];
+const SHEET_ID = '1lPpH7ZRofix3JCRN1zQyXeypvttFQ-DMkeYfy-FaB8Y';
+
+// Helper to normalize timestamps for reliable linking
+// This standardizes format differences (like spaces or Google's Date() wrapper)
+const normalizeTs = (ts: any): string => {
+  if (!ts) return '';
+  const s = String(ts).trim();
+  // Remove all whitespace to ensure consistent matching between Sheet1 and Sheet2
+  return s.replace(/\s+/g, '');
+};
 
 const App: React.FC = () => {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [activities, setActivities] = useState<TaskActivity[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [viewMode, setViewMode] = useState<'dashboard' | 'kanban'>('dashboard');
+
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const fetchSheet = async (sheetName: string) => {
+        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${sheetName}`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const text = await response.text();
+        const startIdx = text.indexOf('{');
+        const endIdx = text.lastIndexOf('}');
+        const jsonStr = text.substring(startIdx, endIdx + 1);
+        const jsonData = JSON.parse(jsonStr);
+        return jsonData.table.rows;
+      };
+
+      const [taskRows, logRows] = await Promise.all([
+        fetchSheet('Sheet1'),
+        fetchSheet('Sheet2')
+      ]);
+
+      const mappedTasks: Task[] = taskRows
+        .map((row: any) => {
+          const c = row.c;
+          if (!c || !c[0]) return null;
+          // Skip headers
+          if (c[0]?.v === 'Task ID' || c[0]?.v === 'TaskID') return null;
+          
+          return {
+            taskId: String(c[0]?.v || ''),
+            channelId: String(c[1]?.v || ''),
+            message: String(c[2]?.v || ''),
+            messageTimestamp: String(c[3]?.v || ''), // LINK KEY
+            user: String(c[4]?.v || ''),
+            status: (c[5]?.v as TaskStatus) || TaskStatus.NEW,
+            priority: String(c[6]?.v || 'Normal'),
+            createdAt: String(c[7]?.v || ''),
+            createdBy: String(c[8]?.v || ''),
+            lastAction: String(c[9]?.v || '')
+          };
+        })
+        .filter((t): t is Task => t !== null && !!t.taskId);
+
+      const mappedLogs: TaskActivity[] = logRows
+        .map((row: any) => {
+          const c = row.c;
+          if (!c || !c[0]) return null;
+          // Skip headers
+          if (c[0]?.v === 'Action Type' || c[0]?.v === 'ActionType') return null;
+          
+          return {
+            taskId: '', // Linking logic happens at filter-time for flexibility
+            actionType: String(c[0]?.v || ''),
+            action: String(c[1]?.v || ''),
+            actionTs: String(c[2]?.v || ''), // LINK KEY
+            user: String(c[3]?.v || ''),
+            timestamp: String(c[4]?.v || ''), // Chronological date for sorting
+            status: (c[5]?.v as TaskStatus) || undefined,
+            priority: c[6]?.v ? String(c[6].v) : undefined,
+          };
+        })
+        .filter((l): l is TaskActivity => l !== null && !!l.actionTs);
+
+      setTasks(mappedTasks);
+      setActivities(mappedLogs);
+      setLastUpdated(new Date());
+    } catch (err) {
+      console.error("Fetch Error:", err);
+      setError("Data sync failed. Ensure your Google Sheet is shared 'Anyone with the link' and contains Sheet1 and Sheet2.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const filteredTasks = useMemo(() => {
-    return TASKS.filter(task => 
-      task.taskId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      task.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      task.user.toLowerCase().includes(searchTerm.toLowerCase())
+    return tasks.filter(task => 
+      task.taskId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      task.message?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      task.user?.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [searchTerm]);
+  }, [searchTerm, tasks]);
+
+  // Dynamically derive activities for the selected task using the Link Key
+  const taskActivities = useMemo(() => {
+    if (!selectedTask) return [];
+    const targetLink = normalizeTs(selectedTask.messageTimestamp);
+    return activities.filter(a => normalizeTs(a.actionTs) === targetLink);
+  }, [selectedTask, activities]);
 
   const stats = useMemo(() => ({
-    total: TASKS.length,
-    todo: TASKS.filter(t => t.status === TaskStatus.TODO).length,
-    new: TASKS.filter(t => t.status === TaskStatus.NEW).length,
-    pickedUp: TASKS.filter(t => t.status === TaskStatus.PICKEDUP).length,
-    done: TASKS.filter(t => t.status === TaskStatus.DONE).length,
-  }), []);
+    total: tasks.length,
+    todo: tasks.filter(t => t.status === TaskStatus.TODO).length,
+    new: tasks.filter(t => t.status === TaskStatus.NEW).length,
+    pickedUp: tasks.filter(t => t.status === TaskStatus.PICKEDUP).length,
+    done: tasks.filter(t => t.status === TaskStatus.DONE).length,
+  }), [tasks]);
 
   const chartData = [
-    { name: 'New', value: stats.new },
+    { name: 'Incoming', value: stats.new },
     { name: 'ToDo', value: stats.todo },
     { name: 'PickedUp', value: stats.pickedUp },
     { name: 'Done', value: stats.done },
@@ -54,196 +155,253 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex bg-slate-50 min-h-screen">
-      <Sidebar />
+    <div className="flex h-screen overflow-hidden bg-slate-50">
+      <Sidebar currentView={viewMode} onViewChange={setViewMode} />
       
-      <main className="flex-1 ml-64 p-8">
-        <header className="mb-8 flex justify-between items-center">
+      <main className="flex-1 h-full overflow-y-auto p-8 relative">
+        <header className="mb-8 flex justify-between items-center sticky top-0 z-10 bg-slate-50/90 backdrop-blur-md py-2">
           <div>
-            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Analytics Dashboard</h1>
-            <p className="text-slate-500 mt-1">Real-time task tracking & activity monitoring system</p>
+            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+              {viewMode === 'dashboard' ? 'Analytics Overview' : 'Kanban Board'}
+            </h1>
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-slate-500 text-sm">Real-time Task Tracking</p>
+              <span className="text-slate-300">•</span>
+              <span className="text-xs font-medium text-slate-400 flex items-center gap-1">
+                <RefreshCw size={10} className={loading ? 'animate-spin' : ''} />
+                Updated: {lastUpdated.toLocaleTimeString()}
+              </span>
+            </div>
           </div>
           <div className="flex gap-4">
-            <button className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors font-medium">
-              <Clock size={18} />
-              Export Logs
-            </button>
-            <button className="flex items-center gap-2 px-6 py-2 bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all font-bold">
-              <Plus size={20} />
-              New Task
+            <div className="flex bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
+              <button 
+                onClick={() => setViewMode('dashboard')}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${
+                  viewMode === 'dashboard' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'
+                }`}
+              >
+                <BarChart size={16} />
+                Dashboard
+              </button>
+              <button 
+                onClick={() => setViewMode('kanban')}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${
+                  viewMode === 'kanban' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'
+                }`}
+              >
+                <LayoutGrid size={16} />
+                Board
+              </button>
+            </div>
+            <button 
+              onClick={fetchData}
+              disabled={loading}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors font-medium disabled:opacity-50 shadow-sm"
+            >
+              <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+              Refresh
             </button>
           </div>
         </header>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <StatCard 
-            title="Total Tasks" 
-            value={stats.total} 
-            icon={<AlertCircle size={24} className="text-indigo-600" />} 
-            color="bg-indigo-50"
-            trend="+12% from yesterday"
-          />
-          <StatCard 
-            title="Awaiting Action" 
-            value={stats.new} 
-            icon={<Timer size={24} className="text-blue-600" />} 
-            color="bg-blue-50"
-          />
-          <StatCard 
-            title="In Progress" 
-            value={stats.pickedUp} 
-            icon={<MoreVertical size={24} className="text-purple-600" />} 
-            color="bg-purple-50"
-          />
-          <StatCard 
-            title="Completed" 
-            value={stats.done} 
-            icon={<CheckCircle2 size={24} className="text-green-600" />} 
-            color="bg-green-50"
-            trend="100% success rate"
-          />
-        </div>
+        {error && (
+          <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3 text-red-700 shadow-sm">
+            <AlertCircle size={20} />
+            <p className="text-sm font-medium">{error}</p>
+          </div>
+        )}
 
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-            <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-              <BarChart size={20} className="text-indigo-500" />
-              Status Distribution
-            </h3>
-            <div className="h-[250px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
-                  <Tooltip 
-                    cursor={{fill: '#f8fafc'}}
-                    contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}}
+        {loading && tasks.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-32 space-y-4">
+            <Loader2 className="w-12 h-12 text-indigo-500 animate-spin" />
+            <p className="text-slate-500 font-medium animate-pulse text-lg">Loading Sheet Data...</p>
+          </div>
+        ) : (
+          <div className="h-full">
+            {viewMode === 'dashboard' ? (
+              <div className="pb-12">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                  <StatCard 
+                    title="Total Tasks" 
+                    value={stats.total} 
+                    icon={<AlertCircle size={24} className="text-indigo-600" />} 
+                    color="bg-indigo-50"
                   />
-                  <Bar dataKey="value" fill="#4f46e5" radius={[6, 6, 0, 0]} barSize={40} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-            <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-              <CheckCircle2 size={20} className="text-emerald-500" />
-              Efficiency
-            </h3>
-            <div className="h-[250px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={chartData}
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {chartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend verticalAlign="bottom" height={36}/>
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
+                  <StatCard 
+                    title="Incoming" 
+                    value={stats.new} 
+                    icon={<Timer size={24} className="text-blue-600" />} 
+                    color="bg-blue-50"
+                  />
+                  <StatCard 
+                    title="In Progress" 
+                    value={stats.pickedUp} 
+                    icon={<MoreVertical size={24} className="text-purple-600" />} 
+                    color="bg-purple-50"
+                  />
+                  <StatCard 
+                    title="Completed" 
+                    value={stats.done} 
+                    icon={<CheckCircle2 size={24} className="text-green-600" />} 
+                    color="bg-green-50"
+                  />
+                </div>
 
-        {/* Task List Section */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-slate-50 flex flex-col sm:flex-row gap-4 justify-between items-center">
-            <h3 className="text-xl font-bold text-slate-800">Task Inventory</h3>
-            <div className="flex gap-2 w-full sm:w-auto">
-              <div className="relative flex-1 sm:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                <input 
-                  type="text" 
-                  placeholder="Search ID, Message, User..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                />
-              </div>
-              <button className="p-2 border border-slate-200 rounded-xl text-slate-500 hover:bg-slate-50 transition-colors">
-                <Filter size={18} />
-              </button>
-            </div>
-          </div>
-          
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="bg-slate-50 text-slate-500 uppercase text-xs font-bold tracking-wider">
-                <tr>
-                  <th className="px-6 py-4">Task ID</th>
-                  <th className="px-6 py-4">Content Message</th>
-                  <th className="px-6 py-4">Requester</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4">Last Activity</th>
-                  <th className="px-6 py-4">Created At</th>
-                  <th className="px-6 py-4"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredTasks.length > 0 ? filteredTasks.map((task) => (
-                  <tr 
-                    key={task.taskId} 
-                    className="hover:bg-slate-50/50 transition-colors cursor-pointer group"
-                    onClick={() => setSelectedTask(task)}
-                  >
-                    <td className="px-6 py-5">
-                      <span className="font-bold text-indigo-600">{task.taskId}</span>
-                    </td>
-                    <td className="px-6 py-5 max-w-xs truncate font-medium text-slate-700">
-                      {task.message}
-                    </td>
-                    <td className="px-6 py-5">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600">
-                          {task.user.substring(0, 2).toUpperCase()}
-                        </div>
-                        <span className="text-sm font-medium text-slate-600">{task.user}</span>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                  <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                    <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2 uppercase tracking-wide">
+                      <BarChart size={20} className="text-indigo-500" />
+                      Current Load
+                    </h3>
+                    <div className="h-[280px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <RechartsBarChart data={chartData}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                          <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+                          <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+                          <Tooltip 
+                            cursor={{fill: '#f8fafc'}}
+                            contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}}
+                          />
+                          <Bar dataKey="value" fill="#4f46e5" radius={[6, 6, 0, 0]} barSize={40} />
+                        </RechartsBarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                  <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                    <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2 uppercase tracking-wide">
+                      <CheckCircle2 size={20} className="text-emerald-500" />
+                      Summary
+                    </h3>
+                    <div className="h-[280px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <RechartsPieChart>
+                          <Pie
+                            data={chartData}
+                            innerRadius={70}
+                            outerRadius={95}
+                            paddingAngle={8}
+                            dataKey="value"
+                          >
+                            {chartData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                          <Legend verticalAlign="bottom" height={36} iconType="circle"/>
+                        </RechartsPieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden mb-8">
+                  <div className="p-6 border-b border-slate-50 flex flex-col sm:flex-row gap-4 justify-between items-center bg-slate-50/30">
+                    <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                      <List size={22} className="text-indigo-500" />
+                      Task Registry
+                    </h3>
+                    <div className="flex gap-2 w-full sm:w-auto">
+                      <div className="relative flex-1 sm:w-64">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                        <input 
+                          type="text" 
+                          placeholder="Search Registry..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                        />
                       </div>
-                    </td>
-                    <td className="px-6 py-5">
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase border ${getStatusStyle(task.status)}`}>
-                        {task.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-5 text-sm text-slate-500 italic max-w-xs truncate">
-                      {task.lastAction}
-                    </td>
-                    <td className="px-6 py-5 text-sm text-slate-400">
-                      {new Date(task.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-5 text-right">
-                      <button className="text-slate-300 group-hover:text-indigo-600 transition-colors p-2 hover:bg-indigo-50 rounded-lg">
-                        <ExternalLink size={18} />
-                      </button>
-                    </td>
-                  </tr>
-                )) : (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-20 text-center text-slate-400 italic">
-                      No tasks found matching your search criteria.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                    </div>
+                  </div>
+                  
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                      <thead className="bg-slate-50/80 text-slate-500 uppercase text-[10px] font-bold tracking-widest">
+                        <tr>
+                          <th className="px-6 py-4">ID</th>
+                          <th className="px-6 py-4">Task Details</th>
+                          <th className="px-6 py-4">Requested By</th>
+                          <th className="px-6 py-4">Status</th>
+                          <th className="px-6 py-4">Recent Action</th>
+                          <th className="px-6 py-4"></th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {filteredTasks.length > 0 ? filteredTasks.map((task) => (
+                          <tr 
+                            key={task.taskId + task.messageTimestamp} 
+                            className="hover:bg-indigo-50/30 transition-colors cursor-pointer group"
+                            onClick={() => setSelectedTask(task)}
+                          >
+                            <td className="px-6 py-5">
+                              <span className="font-bold text-indigo-600 tracking-tighter">{task.taskId}</span>
+                            </td>
+                            <td className="px-6 py-5 max-w-xs truncate font-medium text-slate-700">
+                              {task.message}
+                            </td>
+                            <td className="px-6 py-5">
+                              <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-[10px] font-bold text-indigo-600 border border-indigo-100">
+                                  {task.user?.substring(0, 2).toUpperCase() || '?'}
+                                </div>
+                                <span className="text-sm font-medium text-slate-600">{task.user}</span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-5">
+                              <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase border shadow-sm ${getStatusStyle(task.status)}`}>
+                                {task.status}
+                              </span>
+                            </td>
+                            <td className="px-6 py-5 text-sm text-slate-500 italic max-w-xs truncate">
+                              {task.lastAction}
+                            </td>
+                            <td className="px-6 py-5 text-right">
+                              <button className="text-slate-300 group-hover:text-indigo-600 transition-colors p-2 hover:bg-indigo-50 rounded-lg">
+                                <ExternalLink size={18} />
+                              </button>
+                            </td>
+                          </tr>
+                        )) : (
+                          <tr>
+                            <td colSpan={6} className="px-6 py-20 text-center text-slate-400 italic font-medium">
+                              {loading ? "Re-syncing with cloud..." : "No records found matching filters."}
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="pb-12 h-full">
+                <div className="mb-6 flex items-center justify-between">
+                  <div className="relative w-64">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input 
+                      type="text" 
+                      placeholder="Filter board..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                    />
+                  </div>
+                </div>
+                <div className="h-full overflow-hidden">
+                   <KanbanBoard tasks={filteredTasks} onTaskClick={setSelectedTask} />
+                </div>
+              </div>
+            )}
           </div>
-        </div>
+        )}
       </main>
 
-      {/* Slide-over Detail View */}
       {selectedTask && (
         <TaskDetail 
           task={selectedTask} 
-          activities={ACTIVITIES.filter(a => a.actionTs === selectedTask.messageTimestamp)}
+          activities={taskActivities}
           onClose={() => setSelectedTask(null)} 
         />
       )}
