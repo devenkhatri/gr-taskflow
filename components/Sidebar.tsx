@@ -1,24 +1,16 @@
-
 import React from 'react';
-import { LayoutDashboard, CheckCircle2, ClipboardList, Clock, Settings, User, Columns3, Activity } from 'lucide-react';
+import { LayoutDashboard, CheckCircle2, ClipboardList, Clock, Settings, User, Columns3, Sparkles, CheckCircle } from 'lucide-react';
 
 interface SidebarProps {
-  currentView: 'dashboard' | 'kanban' | 'tasks' | 'logs' | 'channels' | 'users';
-  onViewChange: (view: 'dashboard' | 'kanban' | 'tasks' | 'logs' | 'channels' | 'users') => void;
+  currentView: 'dashboard' | 'kanban' | 'tasks' | 'logs' | 'channels' | 'users' | 'fact-checks' | 'title-generations';
+  onViewChange: (view: 'dashboard' | 'kanban' | 'tasks' | 'logs' | 'channels' | 'users' | 'fact-checks' | 'title-generations') => void;
 }
 
 const Sidebar: React.FC<SidebarProps & { isOpen: boolean; onClose: () => void }> = ({ currentView, onViewChange, isOpen, onClose }) => {
-  const menuItems = [
-    { id: 'dashboard', icon: <LayoutDashboard size={20} />, label: 'Analytics' },
-    { id: 'kanban', icon: <Columns3 size={20} />, label: 'Kanban Board' },
-    { id: 'tasks', icon: <ClipboardList size={20} />, label: 'All Tasks' },
-    { id: 'logs', icon: <Activity size={20} />, label: 'Activity Logs' },
-  ];
-
-  const handleViewChange = (id: string) => {
-    onViewChange(id as any);
+  const handleViewChange = (view: any) => {
+    onViewChange(view);
     onClose();
-  };
+  }
 
   return (
     <>
@@ -30,45 +22,93 @@ const Sidebar: React.FC<SidebarProps & { isOpen: boolean; onClose: () => void }>
         />
       )}
 
-      {/* Sidebar Container */}
-      <div className={`
-        fixed inset-y-0 left-0 z-40 w-64 bg-white h-full border-r border-slate-200 flex flex-col flex-shrink-0 
-        transition-transform duration-300 ease-in-out md:translate-x-0 md:relative md:inset-auto
-        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-      `}>
-        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="bg-indigo-600 p-2 rounded-lg shadow-lg shadow-indigo-100">
-              <ClipboardList className="text-white" size={24} />
-            </div>
-            <span className="text-xl font-bold text-slate-800 tracking-tight">TaskFlow</span>
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 transform transition-transform duration-300 ease-in-out md:translate-x-0 overflow-y-auto ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="p-6 border-b border-slate-50 flex items-center gap-3">
+          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-200">
+            <LayoutDashboard className="text-white" size={18} />
           </div>
-          {/* Close button for mobile */}
-          {/* Note: User usually clicks outside, but explicit close is good practice */}
+          <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-slate-600">TaskFlow</span>
         </div>
-        <nav className="flex-1 p-4 flex flex-col gap-1.5 overflow-y-auto">
-          {menuItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => handleViewChange(item.id)}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${currentView === item.id
-                ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
-                }`}
-            >
-              <span className={`${currentView === item.id ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'}`}>
-                {item.icon}
-              </span>
-              <span>{item.label}</span>
-            </button>
-          ))}
+
+        <nav className="p-4 space-y-1">
+          <div className="px-4 mb-2">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Overview</p>
+          </div>
+          <button
+            onClick={() => handleViewChange('dashboard')}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group w-full text-left ${currentView === 'dashboard'
+              ? 'bg-indigo-50 text-indigo-700 font-semibold shadow-sm shadow-indigo-100'
+              : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+              }`}
+          >
+            <LayoutDashboard size={20} className={currentView === 'dashboard' ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'} />
+            <span>Dashboard</span>
+          </button>
+
+          <div className="mt-8 px-4 mb-2">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tasks</p>
+          </div>
+          <button
+            onClick={() => handleViewChange('kanban')}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group w-full text-left ${currentView === 'kanban'
+              ? 'bg-indigo-50 text-indigo-700 font-semibold shadow-sm shadow-indigo-100'
+              : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+              }`}
+          >
+            <ClipboardList size={20} className={currentView === 'kanban' ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'} />
+            <span>Kanban Board</span>
+          </button>
+          <button
+            onClick={() => handleViewChange('tasks')}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group w-full text-left ${currentView === 'tasks'
+              ? 'bg-indigo-50 text-indigo-700 font-semibold shadow-sm shadow-indigo-100'
+              : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+              }`}
+          >
+            <CheckCircle2 size={20} className={currentView === 'tasks' ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'} />
+            <span>All Tasks</span>
+          </button>
+          <button
+            onClick={() => handleViewChange('logs')}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group w-full text-left ${currentView === 'logs'
+              ? 'bg-indigo-50 text-indigo-700 font-semibold shadow-sm shadow-indigo-100'
+              : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+              }`}
+          >
+            <Clock size={20} className={currentView === 'logs' ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'} />
+            <span>Activity Logs</span>
+          </button>
+
+          <div className="mt-8 px-4 mb-2">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">AI Insights</p>
+          </div>
+          <button
+            onClick={() => handleViewChange('fact-checks')}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group w-full text-left ${currentView === 'fact-checks'
+              ? 'bg-indigo-50 text-indigo-700 font-semibold shadow-sm shadow-indigo-100'
+              : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+              }`}
+          >
+            <CheckCircle size={20} className={currentView === 'fact-checks' ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'} />
+            <span>AI Fact Checks</span>
+          </button>
+          <button
+            onClick={() => handleViewChange('title-generations')}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group w-full text-left ${currentView === 'title-generations'
+              ? 'bg-indigo-50 text-indigo-700 font-semibold shadow-sm shadow-indigo-100'
+              : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+              }`}
+          >
+            <Sparkles size={20} className={currentView === 'title-generations' ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'} />
+            <span>AI Titles</span>
+          </button>
 
           <div className="mt-8 px-4 mb-2">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Management</p>
           </div>
           <button
             onClick={() => handleViewChange('channels')}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${currentView === 'channels'
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group w-full text-left ${currentView === 'channels'
               ? 'bg-indigo-50 text-indigo-700 font-semibold'
               : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
               }`}
@@ -78,7 +118,7 @@ const Sidebar: React.FC<SidebarProps & { isOpen: boolean; onClose: () => void }>
           </button>
           <button
             onClick={() => handleViewChange('users')}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${currentView === 'users'
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group w-full text-left ${currentView === 'users'
               ? 'bg-indigo-50 text-indigo-700 font-semibold'
               : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
               }`}
@@ -87,6 +127,7 @@ const Sidebar: React.FC<SidebarProps & { isOpen: boolean; onClose: () => void }>
             <span>Users</span>
           </button>
         </nav>
+
 
         <div className="p-4 border-t border-slate-100 mt-auto">
           <div className="bg-slate-50 p-4 rounded-2xl flex items-center gap-3 border border-slate-100">

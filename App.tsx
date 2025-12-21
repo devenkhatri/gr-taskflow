@@ -6,7 +6,7 @@ import {
 } from 'recharts';
 import {
   Search, Filter, Plus, Clock, AlertCircle, CheckCircle2,
-  Timer, MoreVertical, ExternalLink, Loader2, RefreshCw, LayoutGrid, List, BarChart, Menu, Columns3, Calendar, XCircle
+  Timer, MoreVertical, ExternalLink, Loader2, RefreshCw, LayoutGrid, List, BarChart, Menu, Columns3, Calendar, XCircle, CheckCircle, Sparkles
 } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import StatCard from './components/StatCard';
@@ -16,6 +16,8 @@ import AllTasksView from './components/AllTasksView';
 import ActivityLogsView from './components/ActivityLogsView';
 import ChannelsView from './components/ChannelsView';
 import UsersView from './components/UsersView';
+import AIFactChecksView from './components/AIFactChecksView';
+import AITitleGenerationsView from './components/AITitleGenerationsView';
 import { Task, TaskStatus, TaskActivity } from './types';
 
 const COLORS = ['#4f46e5', '#8b5cf6', '#f59e0b', '#3b82f6', '#10b981'];
@@ -31,7 +33,7 @@ const App: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-  const [viewMode, setViewMode] = useState<'dashboard' | 'kanban' | 'tasks' | 'logs' | 'channels' | 'users'>('dashboard');
+  const [viewMode, setViewMode] = useState<'dashboard' | 'kanban' | 'tasks' | 'logs' | 'channels' | 'users' | 'fact-checks' | 'title-generations'>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [channelList, setChannelList] = useState<{ id: string; name: string; purpose: string; taskEnabled: string; factCheckEnabled: string; aiEnabled: string }[]>([]);
   const [userList, setUserList] = useState<{ id: string; name: string }[]>([]);
@@ -192,6 +194,14 @@ const App: React.FC = () => {
         })
         .filter((t): t is Task => t !== null && !!t.taskId);
 
+      // Create a map of Message Timestamp -> Task ID for backfilling missing IDs in logs
+      const timestampToTaskIdMap = new Map<string, string>();
+      mappedTasks.forEach(t => {
+        if (t.messageTimestamp && t.taskId) {
+          timestampToTaskIdMap.set(t.messageTimestamp, t.taskId);
+        }
+      });
+
       const mappedLogs: TaskActivity[] = (() => {
         // Find header row to determine indices
         const headerRow = logRows.find((r: any) => r.c && r.c.some((c: any) => c?.v === 'Action Type' || c?.v === 'ActionType'));
@@ -233,11 +243,22 @@ const App: React.FC = () => {
           const atVal = c[iMap.actionType]?.v;
           if (atVal === 'Action Type' || atVal === 'ActionType') return null;
 
+          let taskId = String(c[iMap.taskId]?.v || '');
+          const actionTs = String(c[iMap.actionTs]?.v || '');
+
+          // Fallback: Try to find Task ID via timestamp if missing
+          if (!taskId && actionTs) {
+            const foundId = timestampToTaskIdMap.get(actionTs);
+            if (foundId) {
+              taskId = foundId;
+            }
+          }
+
           return {
-            taskId: String(c[iMap.taskId]?.v || ''),
+            taskId,
             actionType: String(c[iMap.actionType]?.v || ''),
             action: String(c[iMap.action]?.v || ''),
-            actionTs: String(c[iMap.actionTs]?.v || ''),
+            actionTs,
             user: String(c[iMap.user]?.v || ''),
             timestamp: String(c[iMap.timestamp]?.v || ''),
             status: (c[iMap.status]?.v as TaskStatus) || undefined,
@@ -323,13 +344,16 @@ const App: React.FC = () => {
     return activities.filter(a => a.taskId === selectedTask.taskId);
   }, [selectedTask, activities]);
 
+  /* Statistics Calculation */
   const stats = useMemo(() => ({
     total: filteredTasks.length,
     todo: filteredTasks.filter(t => t.status === TaskStatus.TODO).length,
     new: filteredTasks.filter(t => t.status === TaskStatus.NEW).length,
     pickedUp: filteredTasks.filter(t => t.status === TaskStatus.PICKEDUP).length,
     done: filteredTasks.filter(t => t.status === TaskStatus.DONE).length,
-  }), [filteredTasks]);
+    aiFactChecks: activities.filter(a => a.actionType === 'Fact Check Done' || a.actionType?.toLowerCase().includes('fact check')).length,
+    aiTitles: activities.filter(a => a.actionType === 'AI Title Generation Done').length,
+  }), [filteredTasks, activities]);
 
   const chartData = [
     { name: 'Incoming', value: stats.new },
@@ -376,36 +400,24 @@ const App: React.FC = () => {
         return <ChannelsView channels={channelList} />;
       case 'users':
         return <UsersView users={userList} />;
+      case 'fact-checks':
+        return <AIFactChecksView activities={activities} />;
+      case 'title-generations':
+        return <AITitleGenerationsView activities={activities} />;
       case 'dashboard':
       default:
         return (
           <div className="pb-12">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <StatCard
-                title="Total Tasks"
-                value={stats.total}
-                icon={<AlertCircle size={24} className="text-indigo-600" />}
-                color="bg-indigo-50"
-              />
-              <StatCard
-                title="Incoming"
-                value={stats.new}
-                icon={<Timer size={24} className="text-blue-600" />}
-                color="bg-blue-50"
-              />
-              <StatCard
-                title="In Progress"
-                value={stats.pickedUp}
-                icon={<MoreVertical size={24} className="text-purple-600" />}
-                color="bg-purple-50"
-              />
-              <StatCard
-                title="Completed"
-                value={stats.done}
-                icon={<CheckCircle2 size={24} className="text-green-600" />}
-                color="bg-green-50"
-              />
-            </div>
+            {viewMode === 'dashboard' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <StatCard title="Total Tasks" value={stats.total} icon={<AlertCircle size={24} className="text-indigo-600" />} color="bg-indigo-50" />
+                <StatCard title="Incoming" value={stats.new} icon={<Timer size={24} className="text-blue-600" />} color="bg-blue-50" />
+                <StatCard title="In Progress" value={stats.pickedUp} icon={<MoreVertical size={24} className="text-purple-600" />} color="bg-purple-50" />
+                <StatCard title="Completed" value={stats.done} icon={<CheckCircle2 size={24} className="text-green-600" />} color="bg-green-50" />
+                <StatCard title="AI Fact Checks" value={stats.aiFactChecks} icon={<CheckCircle size={24} className="text-teal-600" />} color="bg-teal-50" />
+                <StatCard title="AI Titles Generated" value={stats.aiTitles} icon={<Sparkles size={24} className="text-violet-600" />} color="bg-violet-50" />
+              </div>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
               <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
@@ -512,7 +524,7 @@ const App: React.FC = () => {
         onClose={() => setIsSidebarOpen(false)}
       />
 
-      <main className="flex-1 h-full overflow-y-auto p-4 md:p-8 relative">
+      <main className="flex-1 h-full overflow-y-auto p-4 md:p-8 relative md:ml-64">
         <header className="mb-6 md:mb-8 flex flex-col md:flex-row md:justify-between md:items-center gap-4 sticky top-0 z-30 bg-slate-50/90 backdrop-blur-md py-2">
           <div className="flex items-center gap-4">
             <button
@@ -527,7 +539,9 @@ const App: React.FC = () => {
                   viewMode === 'kanban' ? 'Kanban Board' :
                     viewMode === 'tasks' ? 'Task Status Matrix' :
                       viewMode === 'logs' ? 'Audit Logs & Activities' :
-                        viewMode === 'channels' ? 'Channel Management' : 'User Management'}
+                        viewMode === 'channels' ? 'Channel Management' :
+                          viewMode === 'users' ? 'User Management' :
+                            viewMode === 'fact-checks' ? 'AI Fact Check Analysis' : 'AI Title Generation Done'}
               </h1>
               <div className="flex items-center gap-2 mt-1">
                 <p className="hidden xs:block text-slate-500 text-sm">Real-time Task Tracking</p>
