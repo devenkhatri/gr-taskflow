@@ -18,6 +18,7 @@ import ChannelsView from './components/ChannelsView';
 import UsersView from './components/UsersView';
 import AIFactChecksView from './components/AIFactChecksView';
 import AITitleGenerationsView from './components/AITitleGenerationsView';
+import AICombinedView from './components/AICombinedView';
 import { Task, TaskStatus, TaskActivity } from './types';
 
 const COLORS = ['#4f46e5', '#8b5cf6', '#f59e0b', '#3b82f6', '#10b981'];
@@ -33,7 +34,7 @@ const App: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-  const [viewMode, setViewMode] = useState<'dashboard' | 'kanban' | 'tasks' | 'logs' | 'channels' | 'users' | 'fact-checks' | 'title-generations'>('dashboard');
+  const [viewMode, setViewMode] = useState<'dashboard' | 'kanban' | 'tasks' | 'logs' | 'channels' | 'users' | 'fact-checks' | 'title-generations' | 'ai-combined'>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [channelList, setChannelList] = useState<{ id: string; name: string; purpose: string; taskEnabled: string; factCheckEnabled: string; aiEnabled: string }[]>([]);
   const [userList, setUserList] = useState<{ id: string; name: string }[]>([]);
@@ -404,6 +405,10 @@ const App: React.FC = () => {
         return <AIFactChecksView activities={activities} />;
       case 'title-generations':
         return <AITitleGenerationsView activities={activities} />;
+      case 'title-generations':
+        return <AITitleGenerationsView activities={activities} />;
+      case 'ai-combined':
+        return <AICombinedView tasks={filteredTasks} activities={activities} />;
       case 'dashboard':
       default:
         return (
@@ -541,7 +546,10 @@ const App: React.FC = () => {
                       viewMode === 'logs' ? 'Audit Logs & Activities' :
                         viewMode === 'channels' ? 'Channel Management' :
                           viewMode === 'users' ? 'User Management' :
-                            viewMode === 'fact-checks' ? 'AI Fact Check Analysis' : 'AI Title Generation Done'}
+                            viewMode === 'channels' ? 'Channel Management' :
+                              viewMode === 'users' ? 'User Management' :
+                                viewMode === 'fact-checks' ? 'AI Fact Check Analysis' :
+                                  viewMode === 'title-generations' ? 'AI Title Generation Done' : 'AI Master View'}
               </h1>
               <div className="flex items-center gap-2 mt-1">
                 <p className="hidden xs:block text-slate-500 text-sm">Real-time Task Tracking</p>

@@ -28,7 +28,6 @@ const UsersView: React.FC<UsersViewProps> = ({ users }) => {
                         <tr>
                             <th className="px-6 py-4 w-1/3">User ID</th>
                             <th className="px-6 py-4">User Name</th>
-                            <th className="px-6 py-4 text-right">Action</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
@@ -48,11 +47,6 @@ const UsersView: React.FC<UsersViewProps> = ({ users }) => {
                                             {user.name}
                                         </span>
                                     </div>
-                                </td>
-                                <td className="px-6 py-5 text-right">
-                                    <button className="text-indigo-500 hover:text-indigo-700 transition-colors">
-                                        <Shield size={16} />
-                                    </button>
                                 </td>
                             </tr>
                         ))}

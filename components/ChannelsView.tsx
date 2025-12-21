@@ -50,8 +50,7 @@ const ChannelsView: React.FC<ChannelsViewProps> = ({ channels }) => {
                             <th className="px-4 py-4 w-1/4">Purpose</th>
                             <th className="px-4 py-4 text-center">Tasks</th>
                             <th className="px-4 py-4 text-center">FactCheck</th>
-                            <th className="px-4 py-4 text-center">AI</th>
-                            <th className="px-4 py-4 text-right">Action</th>
+                            <th className="px-4 py-4 text-center">Title Generation</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
@@ -80,11 +79,6 @@ const ChannelsView: React.FC<ChannelsViewProps> = ({ channels }) => {
                                 </td>
                                 <td className="px-4 py-5">
                                     <BooleanBadge value={channel.aiEnabled} />
-                                </td>
-                                <td className="px-4 py-5 text-right">
-                                    <button className="text-indigo-500 hover:text-indigo-700 transition-colors">
-                                        <ExternalLink size={16} />
-                                    </button>
                                 </td>
                             </tr>
                         ))}

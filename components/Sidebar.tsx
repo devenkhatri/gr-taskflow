@@ -1,9 +1,9 @@
 import React from 'react';
-import { LayoutDashboard, CheckCircle2, ClipboardList, Clock, Settings, User, Columns3, Sparkles, CheckCircle } from 'lucide-react';
+import { LayoutDashboard, CheckCircle2, ClipboardList, Clock, Settings, User, Columns3, Sparkles, CheckCircle, Bot } from 'lucide-react';
 
 interface SidebarProps {
-  currentView: 'dashboard' | 'kanban' | 'tasks' | 'logs' | 'channels' | 'users' | 'fact-checks' | 'title-generations';
-  onViewChange: (view: 'dashboard' | 'kanban' | 'tasks' | 'logs' | 'channels' | 'users' | 'fact-checks' | 'title-generations') => void;
+  currentView: 'dashboard' | 'kanban' | 'tasks' | 'logs' | 'channels' | 'users' | 'fact-checks' | 'title-generations' | 'ai-combined';
+  onViewChange: (view: 'dashboard' | 'kanban' | 'tasks' | 'logs' | 'channels' | 'users' | 'fact-checks' | 'title-generations' | 'ai-combined') => void;
 }
 
 const Sidebar: React.FC<SidebarProps & { isOpen: boolean; onClose: () => void }> = ({ currentView, onViewChange, isOpen, onClose }) => {
@@ -83,6 +83,16 @@ const Sidebar: React.FC<SidebarProps & { isOpen: boolean; onClose: () => void }>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">AI Insights</p>
           </div>
           <button
+            onClick={() => handleViewChange('ai-combined')}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group w-full text-left ${currentView === 'ai-combined'
+              ? 'bg-indigo-50 text-indigo-700 font-semibold shadow-sm shadow-indigo-100'
+              : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+              }`}
+          >
+            <Bot size={20} className={currentView === 'ai-combined' ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'} />
+            <span>AI Master Log</span>
+          </button>
+          <button
             onClick={() => handleViewChange('fact-checks')}
             className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group w-full text-left ${currentView === 'fact-checks'
               ? 'bg-indigo-50 text-indigo-700 font-semibold shadow-sm shadow-indigo-100'
@@ -102,6 +112,7 @@ const Sidebar: React.FC<SidebarProps & { isOpen: boolean; onClose: () => void }>
             <Sparkles size={20} className={currentView === 'title-generations' ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'} />
             <span>AI Titles</span>
           </button>
+
 
           <div className="mt-8 px-4 mb-2">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Management</p>
@@ -129,7 +140,7 @@ const Sidebar: React.FC<SidebarProps & { isOpen: boolean; onClose: () => void }>
         </nav>
 
 
-        <div className="p-4 border-t border-slate-100 mt-auto">
+        {/* <div className="p-4 border-t border-slate-100 mt-auto">
           <div className="bg-slate-50 p-4 rounded-2xl flex items-center gap-3 border border-slate-100">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold shadow-sm">
               DG
@@ -139,7 +150,7 @@ const Sidebar: React.FC<SidebarProps & { isOpen: boolean; onClose: () => void }>
               <p className="text-xs text-slate-500">Workspace Admin</p>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
     </>
   );
