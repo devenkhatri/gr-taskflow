@@ -6,7 +6,7 @@ import {
 } from 'recharts';
 import {
   Search, Filter, Plus, Clock, AlertCircle, CheckCircle2,
-  Timer, MoreVertical, ExternalLink, Loader2, RefreshCw, LayoutGrid, List, BarChart, Menu, Columns3
+  Timer, MoreVertical, ExternalLink, Loader2, RefreshCw, LayoutGrid, List, BarChart, Menu, Columns3, Calendar
 } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import StatCard from './components/StatCard';
@@ -31,6 +31,8 @@ const App: React.FC = () => {
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [viewMode, setViewMode] = useState<'dashboard' | 'kanban' | 'tasks' | 'logs'>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [selectedChannel, setSelectedChannel] = useState<string>('All');
+  const [dateRange, setDateRange] = useState<{ start: string; end: string }>({ start: '', end: '' });
 
   const fetchData = async () => {
     setLoading(true);
@@ -145,13 +147,60 @@ const App: React.FC = () => {
     fetchData();
   }, []);
 
+  const availableChannels = useMemo(() => {
+    const channels = new Set(tasks.map(t => t.channelId || 'Uncategorized'));
+    return ['All', ...Array.from(channels).sort()];
+  }, [tasks]);
+
+  const parseDate = (dateStr: string) => {
+    if (!dateStr) return null;
+    if (dateStr.includes('Date(')) {
+      try {
+        const parts = dateStr.match(/\d+/g);
+        if (parts && parts.length >= 3) {
+          return new Date(
+            parseInt(parts[0]),
+            parseInt(parts[1]),
+            parseInt(parts[2]),
+            parseInt(parts[3] || '0'),
+            parseInt(parts[4] || '0'),
+            parseInt(parts[5] || '0')
+          );
+        }
+      } catch (e) { return null; }
+    }
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? null : d;
+  };
+
   const filteredTasks = useMemo(() => {
-    return tasks.filter(task =>
-      task.taskId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      task.message?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      task.user?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [searchTerm, tasks]);
+    return tasks.filter(task => {
+      const matchesSearch = task.taskId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        task.message?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        task.user?.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesChannel = selectedChannel === 'All' || (task.channelId || 'Uncategorized') === selectedChannel;
+
+      let matchesDate = true;
+      if (dateRange.start || dateRange.end) {
+        const taskDate = parseDate(task.createdAt) || parseDate(task.messageTimestamp);
+        if (taskDate) {
+          if (dateRange.start) {
+            const startDate = new Date(dateRange.start);
+            startDate.setHours(0, 0, 0, 0);
+            if (taskDate < startDate) matchesDate = false;
+          }
+          if (matchesDate && dateRange.end) {
+            const endDate = new Date(dateRange.end);
+            endDate.setHours(23, 59, 59, 999);
+            if (taskDate > endDate) matchesDate = false;
+          }
+        }
+      }
+
+      return matchesSearch && matchesChannel && matchesDate;
+    });
+  }, [searchTerm, tasks, selectedChannel, dateRange]);
 
   const taskActivities = useMemo(() => {
     if (!selectedTask) return [];
@@ -159,12 +208,12 @@ const App: React.FC = () => {
   }, [selectedTask, activities]);
 
   const stats = useMemo(() => ({
-    total: tasks.length,
-    todo: tasks.filter(t => t.status === TaskStatus.TODO).length,
-    new: tasks.filter(t => t.status === TaskStatus.NEW).length,
-    pickedUp: tasks.filter(t => t.status === TaskStatus.PICKEDUP).length,
-    done: tasks.filter(t => t.status === TaskStatus.DONE).length,
-  }), [tasks]);
+    total: filteredTasks.length,
+    todo: filteredTasks.filter(t => t.status === TaskStatus.TODO).length,
+    new: filteredTasks.filter(t => t.status === TaskStatus.NEW).length,
+    pickedUp: filteredTasks.filter(t => t.status === TaskStatus.PICKEDUP).length,
+    done: filteredTasks.filter(t => t.status === TaskStatus.DONE).length,
+  }), [filteredTasks]);
 
   const chartData = [
     { name: 'Incoming', value: stats.new },
@@ -414,7 +463,7 @@ const App: React.FC = () => {
           </div>
         </header>
 
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="relative w-full max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input
@@ -424,6 +473,39 @@ const App: React.FC = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm"
             />
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+            <div className="relative">
+              <select
+                value={selectedChannel}
+                onChange={(e) => setSelectedChannel(e.target.value)}
+                className="appearance-none bg-white border border-slate-200 rounded-xl px-4 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm w-full sm:w-48 text-slate-600 font-medium"
+              >
+                {availableChannels.map(ch => (
+                  <option key={ch} value={ch}>{ch === 'All' ? 'All Channels' : ch}</option>
+                ))}
+              </select>
+              <Filter className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
+            </div>
+
+            <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2 shadow-sm w-full sm:w-auto">
+              <Calendar size={16} className="text-slate-400" />
+              <input
+                type="date"
+                value={dateRange.start}
+                onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                className="text-sm text-slate-600 bg-transparent focus:outline-none w-full sm:w-auto"
+                placeholder="Start Date"
+              />
+              <span className="text-slate-300">-</span>
+              <input
+                type="date"
+                value={dateRange.end}
+                onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                className="text-sm text-slate-600 bg-transparent focus:outline-none w-full sm:w-auto"
+                placeholder="End Date"
+              />
+            </div>
           </div>
         </div>
 
