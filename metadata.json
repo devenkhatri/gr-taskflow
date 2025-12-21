@@ -1,0 +1,5 @@
+{
+  "name": "TaskFlow Analytics Dashboard",
+  "description": "A high-performance task management dashboard featuring real-time activity tracking, visual lifecycle stages, and detailed task history based on multi-sheet log systems.",
+  "requestFramePermissions": []
+}
