@@ -19,6 +19,7 @@ import UsersView from './components/UsersView';
 import AIFactChecksView from './components/AIFactChecksView';
 import AITitleGenerationsView from './components/AITitleGenerationsView';
 import AICombinedView from './components/AICombinedView';
+import LoginScreen from './components/LoginScreen';
 import { Task, TaskStatus, TaskActivity } from './types';
 
 const COLORS = ['#4f46e5', '#8b5cf6', '#f59e0b', '#3b82f6', '#10b981'];
@@ -281,9 +282,26 @@ const App: React.FC = () => {
     }
   };
 
+  /* Auth State */
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  /* Data Fetching */
   useEffect(() => {
-    fetchData();
+    const auth = localStorage.getItem('taskflow_auth');
+    if (auth === 'true') {
+      setIsAuthenticated(true);
+    }
+    setAuthLoading(false);
   }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchData();
+      const interval = setInterval(fetchData, 30000); // Poll every 30s
+      return () => clearInterval(interval);
+    }
+  }, [isAuthenticated]);
 
   const availableChannels = useMemo(() => {
     const channels = new Set(tasks.map(t => t.channelName || t.channelId || 'Uncategorized'));
@@ -519,6 +537,17 @@ const App: React.FC = () => {
         );
     }
   };
+
+  const handleLogin = () => {
+    setIsAuthenticated(true);
+    localStorage.setItem('taskflow_auth', 'true');
+  };
+
+  if (authLoading) return null; // Or a loading spinner
+
+  if (!isAuthenticated) {
+    return <LoginScreen onLogin={handleLogin} />;
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
