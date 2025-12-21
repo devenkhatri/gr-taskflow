@@ -1,10 +1,10 @@
 
 import React from 'react';
-import { LayoutDashboard, CheckCircle2, ClipboardList, Clock, Settings, User, Columns3 } from 'lucide-react';
+import { LayoutDashboard, CheckCircle2, ClipboardList, Clock, Settings, User, Columns3, Activity } from 'lucide-react';
 
 interface SidebarProps {
-  currentView: 'dashboard' | 'kanban';
-  onViewChange: (view: 'dashboard' | 'kanban') => void;
+  currentView: 'dashboard' | 'kanban' | 'tasks' | 'logs';
+  onViewChange: (view: 'dashboard' | 'kanban' | 'tasks' | 'logs') => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
@@ -12,8 +12,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
     { id: 'dashboard', icon: <LayoutDashboard size={20} />, label: 'Analytics' },
     { id: 'kanban', icon: <Columns3 size={20} />, label: 'Kanban Board' },
     { id: 'tasks', icon: <ClipboardList size={20} />, label: 'All Tasks' },
-    { id: 'completed', icon: <CheckCircle2 size={20} />, label: 'Completed' },
-    { id: 'logs', icon: <Clock size={20} />, label: 'Activity Logs' },
+    { id: 'logs', icon: <Activity size={20} />, label: 'Activity Logs' },
   ];
 
   return (
@@ -30,7 +29,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
         {menuItems.map((item) => (
           <button
             key={item.id}
-            onClick={() => (item.id === 'dashboard' || item.id === 'kanban') && onViewChange(item.id as any)}
+            onClick={() => onViewChange(item.id as any)}
             className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
               currentView === item.id 
                 ? 'bg-indigo-50 text-indigo-700 font-semibold' 
@@ -47,11 +46,11 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
         <div className="mt-8 px-4 mb-2">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Management</p>
         </div>
-        <button className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all">
+        <button className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all opacity-50 cursor-not-allowed">
           <User size={20} className="text-slate-400" />
           <span>Team Members</span>
         </button>
-        <button className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all">
+        <button className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all opacity-50 cursor-not-allowed">
           <Settings size={20} className="text-slate-400" />
           <span>Settings</span>
         </button>
