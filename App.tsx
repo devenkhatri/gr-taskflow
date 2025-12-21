@@ -6,7 +6,7 @@ import {
 } from 'recharts';
 import {
   Search, Filter, Plus, Clock, AlertCircle, CheckCircle2,
-  Timer, MoreVertical, ExternalLink, Loader2, RefreshCw, LayoutGrid, List, BarChart, Menu, Columns3, Calendar, XCircle, CheckCircle, Sparkles
+  Timer, MoreVertical, ExternalLink, Loader2, RefreshCw, LayoutGrid, List, BarChart, Menu, Columns3, Calendar, XCircle, CheckCircle, Sparkles, ArrowUpDown
 } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import StatCard from './components/StatCard';
@@ -25,7 +25,26 @@ import { Task, TaskStatus, TaskActivity } from './types';
 const COLORS = ['#4f46e5', '#8b5cf6', '#f59e0b', '#3b82f6', '#10b981'];
 const SHEET_ID = '1lPpH7ZRofix3JCRN1zQyXeypvttFQ-DMkeYfy-FaB8Y';
 
-
+const parseDate = (dateStr: string) => {
+  if (!dateStr) return new Date(0);
+  if (dateStr.includes('Date(')) {
+    try {
+      const parts = dateStr.match(/\d+/g);
+      if (parts && parts.length >= 3) {
+        return new Date(
+          parseInt(parts[0]),
+          parseInt(parts[1]),
+          parseInt(parts[2]),
+          parseInt(parts[3] || '0'),
+          parseInt(parts[4] || '0'),
+          parseInt(parts[5] || '0')
+        );
+      }
+    } catch (e) { return new Date(0); }
+  }
+  const d = new Date(dateStr);
+  return isNaN(d.getTime()) ? new Date(0) : d;
+};
 
 const App: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -41,6 +60,7 @@ const App: React.FC = () => {
   const [userList, setUserList] = useState<{ id: string; name: string }[]>([]);
   const [selectedChannel, setSelectedChannel] = useState<string>('All');
   const [dateRange, setDateRange] = useState<{ start: string; end: string }>({ start: '', end: '' });
+  const [sortOption, setSortOption] = useState<'latest' | 'oldest' | 'priority' | 'taskid'>('taskid');
 
   const fetchData = async () => {
     setLoading(true);
@@ -308,29 +328,10 @@ const App: React.FC = () => {
     return ['All', ...Array.from(channels).sort()];
   }, [tasks]);
 
-  const parseDate = (dateStr: string) => {
-    if (!dateStr) return null;
-    if (dateStr.includes('Date(')) {
-      try {
-        const parts = dateStr.match(/\d+/g);
-        if (parts && parts.length >= 3) {
-          return new Date(
-            parseInt(parts[0]),
-            parseInt(parts[1]),
-            parseInt(parts[2]),
-            parseInt(parts[3] || '0'),
-            parseInt(parts[4] || '0'),
-            parseInt(parts[5] || '0')
-          );
-        }
-      } catch (e) { return null; }
-    }
-    const d = new Date(dateStr);
-    return isNaN(d.getTime()) ? null : d;
-  };
+
 
   const filteredTasks = useMemo(() => {
-    return tasks.filter(task => {
+    const filtered = tasks.filter(task => {
       const matchesSearch = task.taskId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         task.message?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         task.user?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -356,12 +357,47 @@ const App: React.FC = () => {
 
       return matchesSearch && matchesChannel && matchesDate;
     });
-  }, [searchTerm, tasks, selectedChannel, dateRange]);
+
+    // Apply Sorting
+    return [...filtered].sort((a, b) => {
+      switch (sortOption) {
+        case 'latest':
+          return parseDate(b.createdAt).getTime() - parseDate(a.createdAt).getTime();
+        case 'oldest':
+          return parseDate(a.createdAt).getTime() - parseDate(b.createdAt).getTime();
+        case 'priority': {
+          const pMap: Record<string, number> = { 'High': 3, 'Normal': 2, 'Low': 1 };
+          return (pMap[b.priority] || 0) - (pMap[a.priority] || 0);
+        }
+        case 'taskid':
+          return b.taskId.localeCompare(a.taskId);
+        default:
+          return 0;
+      }
+    });
+  }, [searchTerm, tasks, selectedChannel, dateRange, sortOption]);
+
+  const sortedActivities = useMemo(() => {
+    return [...activities].sort((a, b) => {
+      const timeA = parseDate(a.actionTs).getTime();
+      const timeB = parseDate(b.actionTs).getTime();
+      switch (sortOption) {
+        case 'latest':
+          return timeB - timeA;
+        case 'oldest':
+          return timeA - timeB;
+        case 'taskid':
+          return b.taskId.localeCompare(a.taskId);
+        default:
+          return timeB - timeA; // Default to latest for logs if priority etc.
+      }
+    });
+  }, [activities, sortOption]);
 
   const taskActivities = useMemo(() => {
     if (!selectedTask) return [];
-    return activities.filter(a => a.taskId === selectedTask.taskId);
-  }, [selectedTask, activities]);
+    return sortedActivities.filter(a => a.taskId === selectedTask.taskId);
+  }, [selectedTask, sortedActivities]);
 
   /* Statistics Calculation */
   const stats = useMemo(() => ({
@@ -403,7 +439,8 @@ const App: React.FC = () => {
         return (
           <AllTasksView
             tasks={filteredTasks}
-            activities={activities}
+            activities={sortedActivities}
+            sortOption={sortOption}
             onTaskClick={setSelectedTask}
           />
         );
@@ -411,7 +448,8 @@ const App: React.FC = () => {
         return (
           <ActivityLogsView
             tasks={filteredTasks}
-            activities={activities}
+            activities={sortedActivities}
+            sortOption={sortOption}
             onTaskClick={setSelectedTask}
           />
         );
@@ -420,13 +458,11 @@ const App: React.FC = () => {
       case 'users':
         return <UsersView users={userList} />;
       case 'fact-checks':
-        return <AIFactChecksView activities={activities} />;
+        return <AIFactChecksView activities={sortedActivities} />;
       case 'title-generations':
-        return <AITitleGenerationsView activities={activities} />;
-      case 'title-generations':
-        return <AITitleGenerationsView activities={activities} />;
+        return <AITitleGenerationsView activities={sortedActivities} />;
       case 'ai-combined':
-        return <AICombinedView tasks={filteredTasks} activities={activities} />;
+        return <AICombinedView tasks={filteredTasks} activities={sortedActivities} />;
       case 'dashboard':
       default:
         return (
@@ -575,10 +611,8 @@ const App: React.FC = () => {
                       viewMode === 'logs' ? 'Audit Logs & Activities' :
                         viewMode === 'channels' ? 'Channel Management' :
                           viewMode === 'users' ? 'User Management' :
-                            viewMode === 'channels' ? 'Channel Management' :
-                              viewMode === 'users' ? 'User Management' :
-                                viewMode === 'fact-checks' ? 'AI Fact Check Analysis' :
-                                  viewMode === 'title-generations' ? 'AI Title Generation Done' : 'AI Master View'}
+                            viewMode === 'fact-checks' ? 'AI Fact Check Analysis' :
+                              viewMode === 'title-generations' ? 'AI Title Generation Done' : 'AI Master View'}
               </h1>
               <div className="flex items-center gap-2 mt-1">
                 <p className="hidden xs:block text-slate-500 text-sm">Real-time Task Tracking</p>
@@ -659,6 +693,20 @@ const App: React.FC = () => {
                 ))}
               </select>
               <Filter className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
+            </div>
+
+            <div className="relative">
+              <select
+                value={sortOption}
+                onChange={(e) => setSortOption(e.target.value as any)}
+                className="appearance-none bg-white border border-slate-200 rounded-xl px-4 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm w-full sm:w-40 text-slate-600 font-medium"
+              >
+                <option value="latest">Latest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="priority">Priority</option>
+                <option value="taskid">Task ID</option>
+              </select>
+              <ArrowUpDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
             </div>
 
             <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2 shadow-sm w-full sm:w-auto">

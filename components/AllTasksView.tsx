@@ -6,6 +6,7 @@ import { Task, TaskStatus, TaskActivity } from '../types';
 interface AllTasksViewProps {
   tasks: Task[];
   activities: TaskActivity[];
+  sortOption: 'latest' | 'oldest' | 'priority' | 'taskid';
   onTaskClick: (task: Task) => void;
 }
 
@@ -17,7 +18,28 @@ const STAGES = [
   TaskStatus.DONE
 ];
 
-const AllTasksView: React.FC<AllTasksViewProps> = ({ tasks, activities, onTaskClick }) => {
+const parseDate = (dateStr: string) => {
+  if (!dateStr) return new Date(0);
+  if (dateStr.includes('Date(')) {
+    try {
+      const parts = dateStr.match(/\d+/g);
+      if (parts && parts.length >= 3) {
+        return new Date(
+          parseInt(parts[0]),
+          parseInt(parts[1]),
+          parseInt(parts[2]),
+          parseInt(parts[3] || '0'),
+          parseInt(parts[4] || '0'),
+          parseInt(parts[5] || '0')
+        );
+      }
+    } catch (e) { return new Date(0); }
+  }
+  const d = new Date(dateStr);
+  return isNaN(d.getTime()) ? new Date(0) : d;
+};
+
+const AllTasksView: React.FC<AllTasksViewProps> = ({ tasks, activities, sortOption, onTaskClick }) => {
   const getTaskReachedStatuses = (task: Task) => {
     const taskLogs = activities.filter(a => a.taskId === task.taskId);
 
@@ -45,7 +67,16 @@ const AllTasksView: React.FC<AllTasksViewProps> = ({ tasks, activities, onTaskCl
     return groups;
   }, [tasks]);
 
-  const channelNames = Object.keys(tasksByChannel).sort();
+  const channelNames = React.useMemo(() => {
+    return Object.keys(tasksByChannel).sort((a, b) => {
+      const latestA = tasksByChannel[a][0] ? parseDate(tasksByChannel[a][0].messageTimestamp).getTime() : 0;
+      const latestB = tasksByChannel[b][0] ? parseDate(tasksByChannel[b][0].messageTimestamp).getTime() : 0;
+
+      if (sortOption === 'oldest') return latestA - latestB;
+      if (sortOption === 'taskid') return b.localeCompare(a); // Channel name sort
+      return latestB - latestA;
+    });
+  }, [tasksByChannel, sortOption]);
 
   return (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">

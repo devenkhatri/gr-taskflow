@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { Sparkles, Clock, User, Type } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { TaskActivity } from '../types';
 
 interface AITitleGenerationsViewProps {
@@ -40,7 +41,7 @@ const AITitleGenerationsView: React.FC<AITitleGenerationsViewProps> = ({ activit
                                 </td>
                                 <td className="px-6 py-4">
                                     <div className="prose prose-sm max-w-none text-slate-700 bg-violet-50/30 p-4 rounded-xl border border-violet-100 text-sm whitespace-pre-wrap font-medium">
-                                        {log.action}
+                                        <ReactMarkdown>{log.action}</ReactMarkdown>
                                     </div>
                                 </td>
                             </tr>

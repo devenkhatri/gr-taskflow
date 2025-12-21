@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { Bot, CheckCircle, Clock, FileText, User } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { TaskActivity } from '../types';
 
 interface AIFactChecksViewProps {
@@ -39,8 +40,8 @@ const AIFactChecksView: React.FC<AIFactChecksViewProps> = ({ activities }) => {
                                     </span>
                                 </td>
                                 <td className="px-6 py-4">
-                                    <div className="prose prose-sm max-w-none text-slate-600 bg-slate-50 p-4 rounded-xl border border-slate-100 text-xs font-mono whitespace-pre-wrap">
-                                        {log.action}
+                                    <div className="prose prose-sm max-w-none text-slate-600 bg-slate-50 p-4 rounded-xl border border-slate-100 text-xs font-mono">
+                                        <ReactMarkdown>{log.action}</ReactMarkdown>
                                     </div>
                                 </td>
                             </tr>

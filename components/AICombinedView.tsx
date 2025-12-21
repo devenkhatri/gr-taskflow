@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Bot, Search, Filter, Sparkles, CheckCircle, FileText, ChevronDown, ChevronRight, LayoutGrid } from 'lucide-react';
-import { Task, TaskActivity } from '../types';
+import ReactMarkdown from 'react-markdown';
+import { Task, TaskActivity, TaskStatus } from '../types';
 
 interface AICombinedViewProps {
     tasks: Task[];
@@ -137,7 +138,7 @@ const AICombinedView: React.FC<AICombinedViewProps> = ({ tasks, activities }) =>
                                     <td className="px-6 py-4 align-top">
                                         <p className="text-sm text-slate-700 font-medium line-clamp-2">{item.message}</p>
                                         <div className="flex gap-2 mt-2">
-                                            <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded border ${item.status === 'DONE' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                            <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded border ${item.status === TaskStatus.DONE ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
                                                 'bg-slate-100 text-slate-500 border-slate-200'
                                                 }`}>
                                                 {item.status}
@@ -185,7 +186,7 @@ const AICombinedView: React.FC<AICombinedViewProps> = ({ tasks, activities }) =>
                                                     </h4>
                                                     {item.hasFactCheck ? (
                                                         <div className="prose prose-sm max-w-none text-slate-600 font-mono text-xs bg-slate-50 p-3 rounded-lg border border-slate-100 h-64 overflow-y-auto custom-scrollbar">
-                                                            {item.factCheckContent}
+                                                            <ReactMarkdown>{item.factCheckContent || ''}</ReactMarkdown>
                                                         </div>
                                                     ) : (
                                                         <div className="h-64 flex flex-col items-center justify-center text-slate-400 gap-2 bg-slate-50 rounded-lg border border-dashed border-slate-200">
@@ -203,7 +204,7 @@ const AICombinedView: React.FC<AICombinedViewProps> = ({ tasks, activities }) =>
                                                     </h4>
                                                     {item.hasTitleGen ? (
                                                         <div className="prose prose-sm max-w-none text-slate-700 text-sm whitespace-pre-wrap bg-violet-50/10 p-3 rounded-lg border border-violet-100 h-64 overflow-y-auto custom-scrollbar">
-                                                            {item.titleGenContent}
+                                                            <ReactMarkdown>{item.titleGenContent || ''}</ReactMarkdown>
                                                         </div>
                                                     ) : (
                                                         <div className="h-64 flex flex-col items-center justify-center text-slate-400 gap-2 bg-slate-50 rounded-lg border border-dashed border-slate-200">

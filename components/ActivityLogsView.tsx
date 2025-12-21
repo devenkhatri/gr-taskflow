@@ -6,10 +6,11 @@ import { Task, TaskStatus, TaskActivity } from '../types';
 interface ActivityLogsViewProps {
   tasks: Task[];
   activities: TaskActivity[];
+  sortOption: 'latest' | 'oldest' | 'priority' | 'taskid';
   onTaskClick: (task: Task) => void;
 }
 
-const ActivityLogsView: React.FC<ActivityLogsViewProps> = ({ tasks, activities, onTaskClick }) => {
+const ActivityLogsView: React.FC<ActivityLogsViewProps> = ({ tasks, activities, sortOption, onTaskClick }) => {
   const parseDate = (dateStr: string) => {
     if (!dateStr) return new Date(0);
     if (dateStr.includes('Date(')) {
@@ -46,14 +47,21 @@ const ActivityLogsView: React.FC<ActivityLogsViewProps> = ({ tasks, activities, 
     return Array.from(groups.values())
       .map(group => ({
         ...group,
-        logs: group.logs.sort((a, b) => parseDate(b.timestamp).getTime() - parseDate(a.timestamp).getTime())
+        logs: group.logs.sort((a, b) => {
+          const tA = parseDate(a.timestamp).getTime();
+          const tB = parseDate(b.timestamp).getTime();
+          return sortOption === 'oldest' ? tA - tB : tB - tA;
+        })
       }))
       .sort((a, b) => {
         const latestA = a.logs[0] ? parseDate(a.logs[0].timestamp).getTime() : 0;
         const latestB = b.logs[0] ? parseDate(b.logs[0].timestamp).getTime() : 0;
+
+        if (sortOption === 'oldest') return latestA - latestB;
+        if (sortOption === 'taskid') return (b.task?.taskId || '').localeCompare(a.task?.taskId || '');
         return latestB - latestA;
       });
-  }, [tasks, activities]);
+  }, [tasks, activities, sortOption]);
 
   const getStatusColor = (status?: TaskStatus) => {
     switch (status) {
