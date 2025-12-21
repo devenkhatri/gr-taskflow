@@ -18,17 +18,9 @@ const STAGES = [
 ];
 
 const AllTasksView: React.FC<AllTasksViewProps> = ({ tasks, activities, onTaskClick }) => {
-  // Helper to normalize timestamps for reliable linking (same as App.tsx)
-  const normalizeTs = (ts: any): string => {
-    if (!ts) return '';
-    const s = String(ts).trim();
-    return s.replace(/\s+/g, '');
-  };
-
   const getTaskReachedStatuses = (task: Task) => {
-    const taskLink = normalizeTs(task.messageTimestamp);
-    const taskLogs = activities.filter(a => normalizeTs(a.actionTs) === taskLink);
-    
+    const taskLogs = activities.filter(a => a.taskId === task.taskId);
+
     const reached = new Set<TaskStatus>();
     // Add from logs
     taskLogs.forEach(log => {
@@ -58,7 +50,7 @@ const AllTasksView: React.FC<AllTasksViewProps> = ({ tasks, activities, onTaskCl
             {tasks.map((task) => {
               const reached = getTaskReachedStatuses(task);
               return (
-                <tr 
+                <tr
                   key={task.taskId + task.messageTimestamp}
                   className="hover:bg-indigo-50/20 transition-colors cursor-pointer group"
                   onClick={() => onTaskClick(task)}
@@ -75,16 +67,15 @@ const AllTasksView: React.FC<AllTasksViewProps> = ({ tasks, activities, onTaskCl
                   {STAGES.map((stage) => {
                     const hasPassed = reached.has(stage);
                     const isCurrent = task.status === stage;
-                    
+
                     return (
                       <td key={stage} className="px-6 py-5 text-center">
                         <div className="flex justify-center items-center">
                           {hasPassed ? (
-                            <div className={`p-1.5 rounded-full transition-all duration-300 ${
-                              isCurrent 
-                                ? 'bg-indigo-600 text-white shadow-md scale-110' 
+                            <div className={`p-1.5 rounded-full transition-all duration-300 ${isCurrent
+                                ? 'bg-indigo-600 text-white shadow-md scale-110'
                                 : 'bg-emerald-100 text-emerald-600'
-                            }`}>
+                              }`}>
                               <Check size={14} strokeWidth={3} />
                             </div>
                           ) : (

@@ -1,12 +1,12 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { 
-  BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-  PieChart as RechartsPieChart, Pie, Cell, Legend 
+import {
+  BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart as RechartsPieChart, Pie, Cell, Legend
 } from 'recharts';
-import { 
-  Search, Filter, Plus, Clock, AlertCircle, CheckCircle2, 
-  Timer, MoreVertical, ExternalLink, Loader2, RefreshCw, LayoutGrid, List, BarChart
+import {
+  Search, Filter, Plus, Clock, AlertCircle, CheckCircle2,
+  Timer, MoreVertical, ExternalLink, Loader2, RefreshCw, LayoutGrid, List, BarChart, Menu, Columns3
 } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import StatCard from './components/StatCard';
@@ -19,11 +19,7 @@ import { Task, TaskStatus, TaskActivity } from './types';
 const COLORS = ['#4f46e5', '#8b5cf6', '#f59e0b', '#3b82f6', '#10b981'];
 const SHEET_ID = '1lPpH7ZRofix3JCRN1zQyXeypvttFQ-DMkeYfy-FaB8Y';
 
-const normalizeTs = (ts: any): string => {
-  if (!ts) return '';
-  const s = String(ts).trim();
-  return s.replace(/\s+/g, '');
-};
+
 
 const App: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -34,6 +30,7 @@ const App: React.FC = () => {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [viewMode, setViewMode] = useState<'dashboard' | 'kanban' | 'tasks' | 'logs'>('dashboard');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -63,7 +60,7 @@ const App: React.FC = () => {
           const c = row.c;
           if (!c || !c[0]) return null;
           if (c[0]?.v === 'Task ID' || c[0]?.v === 'TaskID') return null;
-          
+
           return {
             taskId: String(c[0]?.v || ''),
             channelId: String(c[1]?.v || ''),
@@ -79,24 +76,59 @@ const App: React.FC = () => {
         })
         .filter((t): t is Task => t !== null && !!t.taskId);
 
-      const mappedLogs: TaskActivity[] = logRows
-        .map((row: any) => {
-          const c = row.c;
-          if (!c || !c[0]) return null;
-          if (c[0]?.v === 'Action Type' || c[0]?.v === 'ActionType') return null;
-          
-          return {
-            taskId: '',
-            actionType: String(c[0]?.v || ''),
-            action: String(c[1]?.v || ''),
-            actionTs: String(c[2]?.v || ''),
-            user: String(c[3]?.v || ''),
-            timestamp: String(c[4]?.v || ''),
-            status: (c[5]?.v as TaskStatus) || undefined,
-            priority: c[6]?.v ? String(c[6].v) : undefined,
+      const mappedLogs: TaskActivity[] = (() => {
+        // Find header row to determine indices
+        const headerRow = logRows.find((r: any) => r.c && r.c.some((c: any) => c?.v === 'Action Type' || c?.v === 'ActionType'));
+
+        // Default indices based on previous known structure
+        let iMap = {
+          taskId: -1,
+          actionType: 0,
+          action: 1,
+          actionTs: 2,
+          user: 3,
+          timestamp: 4,
+          status: 5,
+          priority: 6
+        };
+
+        if (headerRow) {
+          const getI = (name: string) => headerRow.c.findIndex((c: any) => String(c?.v || '').toLowerCase().replace(/\s/g, '') === name);
+          const newMap = {
+            taskId: getI('taskid'),
+            actionType: getI('actiontype'),
+            action: getI('action'),
+            actionTs: getI('actiontimestamp') === -1 ? getI('actionts') : getI('actiontimestamp'),
+            user: getI('user'),
+            timestamp: getI('timestamp'),
+            status: getI('status'),
+            priority: getI('priority')
           };
-        })
-        .filter((l): l is TaskActivity => l !== null && !!l.actionTs);
+
+          if (newMap.actionType !== -1) {
+            iMap = newMap;
+          }
+        }
+
+        return logRows.map((row: any) => {
+          const c = row.c;
+          if (!c) return null;
+          // Skip header row
+          const atVal = c[iMap.actionType]?.v;
+          if (atVal === 'Action Type' || atVal === 'ActionType') return null;
+
+          return {
+            taskId: String(c[iMap.taskId]?.v || ''),
+            actionType: String(c[iMap.actionType]?.v || ''),
+            action: String(c[iMap.action]?.v || ''),
+            actionTs: String(c[iMap.actionTs]?.v || ''),
+            user: String(c[iMap.user]?.v || ''),
+            timestamp: String(c[iMap.timestamp]?.v || ''),
+            status: (c[iMap.status]?.v as TaskStatus) || undefined,
+            priority: c[iMap.priority]?.v ? String(c[iMap.priority]?.v) : undefined,
+          };
+        }).filter((l: any) => l !== null && !!l.actionTs);
+      })();
 
       setTasks(mappedTasks);
       setActivities(mappedLogs);
@@ -114,7 +146,7 @@ const App: React.FC = () => {
   }, []);
 
   const filteredTasks = useMemo(() => {
-    return tasks.filter(task => 
+    return tasks.filter(task =>
       task.taskId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       task.message?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       task.user?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -123,8 +155,7 @@ const App: React.FC = () => {
 
   const taskActivities = useMemo(() => {
     if (!selectedTask) return [];
-    const targetLink = normalizeTs(selectedTask.messageTimestamp);
-    return activities.filter(a => normalizeTs(a.actionTs) === targetLink);
+    return activities.filter(a => a.taskId === selectedTask.taskId);
   }, [selectedTask, activities]);
 
   const stats = useMemo(() => ({
@@ -157,23 +188,23 @@ const App: React.FC = () => {
       case 'kanban':
         return (
           <div className="h-full overflow-hidden">
-             <KanbanBoard tasks={filteredTasks} onTaskClick={setSelectedTask} />
+            <KanbanBoard tasks={filteredTasks} onTaskClick={setSelectedTask} />
           </div>
         );
       case 'tasks':
         return (
-          <AllTasksView 
-            tasks={filteredTasks} 
-            activities={activities} 
-            onTaskClick={setSelectedTask} 
+          <AllTasksView
+            tasks={filteredTasks}
+            activities={activities}
+            onTaskClick={setSelectedTask}
           />
         );
       case 'logs':
         return (
-          <ActivityLogsView 
-            tasks={filteredTasks} 
-            activities={activities} 
-            onTaskClick={setSelectedTask} 
+          <ActivityLogsView
+            tasks={filteredTasks}
+            activities={activities}
+            onTaskClick={setSelectedTask}
           />
         );
       case 'dashboard':
@@ -181,28 +212,28 @@ const App: React.FC = () => {
         return (
           <div className="pb-12">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <StatCard 
-                title="Total Tasks" 
-                value={stats.total} 
-                icon={<AlertCircle size={24} className="text-indigo-600" />} 
+              <StatCard
+                title="Total Tasks"
+                value={stats.total}
+                icon={<AlertCircle size={24} className="text-indigo-600" />}
                 color="bg-indigo-50"
               />
-              <StatCard 
-                title="Incoming" 
-                value={stats.new} 
-                icon={<Timer size={24} className="text-blue-600" />} 
+              <StatCard
+                title="Incoming"
+                value={stats.new}
+                icon={<Timer size={24} className="text-blue-600" />}
                 color="bg-blue-50"
               />
-              <StatCard 
-                title="In Progress" 
-                value={stats.pickedUp} 
-                icon={<MoreVertical size={24} className="text-purple-600" />} 
+              <StatCard
+                title="In Progress"
+                value={stats.pickedUp}
+                icon={<MoreVertical size={24} className="text-purple-600" />}
                 color="bg-purple-50"
               />
-              <StatCard 
-                title="Completed" 
-                value={stats.done} 
-                icon={<CheckCircle2 size={24} className="text-green-600" />} 
+              <StatCard
+                title="Completed"
+                value={stats.done}
+                icon={<CheckCircle2 size={24} className="text-green-600" />}
                 color="bg-green-50"
               />
             </div>
@@ -219,9 +250,9 @@ const App: React.FC = () => {
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                       <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
                       <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
-                      <Tooltip 
-                        cursor={{fill: '#f8fafc'}}
-                        contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}}
+                      <Tooltip
+                        cursor={{ fill: '#f8fafc' }}
+                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                       />
                       <Bar dataKey="value" fill="#4f46e5" radius={[6, 6, 0, 0]} barSize={40} />
                     </RechartsBarChart>
@@ -248,7 +279,7 @@ const App: React.FC = () => {
                         ))}
                       </Pie>
                       <Tooltip />
-                      <Legend verticalAlign="bottom" height={36} iconType="circle"/>
+                      <Legend verticalAlign="bottom" height={36} iconType="circle" />
                     </RechartsPieChart>
                   </ResponsiveContainer>
                 </div>
@@ -261,14 +292,14 @@ const App: React.FC = () => {
                   <List size={22} className="text-indigo-500" />
                   Registry Overview
                 </h3>
-                <button 
+                <button
                   onClick={() => setViewMode('tasks')}
                   className="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors uppercase tracking-widest"
                 >
                   View Matrix →
                 </button>
               </div>
-              
+
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead className="bg-slate-50/80 text-slate-500 uppercase text-[10px] font-bold tracking-widest">
@@ -280,8 +311,8 @@ const App: React.FC = () => {
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {filteredTasks.slice(0, 5).map((task) => (
-                      <tr 
-                        key={task.taskId + task.messageTimestamp} 
+                      <tr
+                        key={task.taskId + task.messageTimestamp}
                         className="hover:bg-indigo-50/30 transition-colors cursor-pointer"
                         onClick={() => setSelectedTask(task)}
                       >
@@ -305,62 +336,80 @@ const App: React.FC = () => {
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
-      <Sidebar currentView={viewMode as any} onViewChange={setViewMode as any} />
-      
-      <main className="flex-1 h-full overflow-y-auto p-8 relative">
-        <header className="mb-8 flex justify-between items-center sticky top-0 z-30 bg-slate-50/90 backdrop-blur-md py-2">
-          <div>
-            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-              {viewMode === 'dashboard' ? 'Analytics Overview' : 
-               viewMode === 'kanban' ? 'Kanban Board' : 
-               viewMode === 'tasks' ? 'Task Status Matrix' : 'Audit Logs & Activities'}
-            </h1>
-            <div className="flex items-center gap-2 mt-1">
-              <p className="text-slate-500 text-sm">Real-time Task Tracking</p>
-              <span className="text-slate-300">•</span>
-              <span className="text-xs font-medium text-slate-400 flex items-center gap-1">
-                <RefreshCw size={10} className={loading ? 'animate-spin' : ''} />
-                Updated: {lastUpdated.toLocaleTimeString()}
-              </span>
+      <Sidebar
+        currentView={viewMode as any}
+        onViewChange={setViewMode as any}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+      />
+
+      <main className="flex-1 h-full overflow-y-auto p-4 md:p-8 relative">
+        <header className="mb-6 md:mb-8 flex flex-col md:flex-row md:justify-between md:items-center gap-4 sticky top-0 z-30 bg-slate-50/90 backdrop-blur-md py-2">
+          <div className="flex items-center gap-4">
+            <button
+              className="p-2 -ml-2 text-slate-600 hover:bg-white rounded-lg md:hidden transition-colors"
+              onClick={() => setIsSidebarOpen(true)}
+            >
+              <Menu size={24} />
+            </button>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
+                {viewMode === 'dashboard' ? 'Analytics Overview' :
+                  viewMode === 'kanban' ? 'Kanban Board' :
+                    viewMode === 'tasks' ? 'Task Status Matrix' : 'Audit Logs & Activities'}
+              </h1>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="hidden xs:block text-slate-500 text-sm">Real-time Task Tracking</p>
+                <span className="hidden xs:block text-slate-300">•</span>
+                <span className="text-xs font-medium text-slate-400 flex items-center gap-1">
+                  <RefreshCw size={10} className={loading ? 'animate-spin' : ''} />
+                  Updated: {lastUpdated.toLocaleTimeString()}
+                </span>
+              </div>
             </div>
           </div>
-          <div className="flex gap-4">
-            <div className="flex bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
-              <button 
+          <div className="flex gap-2 sm:gap-4 overflow-x-auto pb-1 sm:pb-0 w-full md:w-auto no-scrollbar">
+            <div className="flex bg-white border border-slate-200 rounded-xl p-1 shadow-sm flex-shrink-0">
+              <button
                 onClick={() => setViewMode('dashboard')}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${
-                  viewMode === 'dashboard' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'
-                }`}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${viewMode === 'dashboard' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'
+                  }`}
               >
                 <BarChart size={16} />
-                Analytics
+                <span className="hidden sm:inline">Analytics</span>
               </button>
-              <button 
+              <button
+                onClick={() => setViewMode('kanban')}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${viewMode === 'kanban' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'
+                  }`}
+              >
+                <Columns3 size={16} />
+                <span className="hidden sm:inline">Kanban</span>
+              </button>
+              <button
                 onClick={() => setViewMode('tasks')}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${
-                  viewMode === 'tasks' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'
-                }`}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${viewMode === 'tasks' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'
+                  }`}
               >
                 <List size={16} />
-                Matrix
+                <span className="hidden sm:inline">Matrix</span>
               </button>
-              <button 
+              <button
                 onClick={() => setViewMode('logs')}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${
-                  viewMode === 'logs' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'
-                }`}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${viewMode === 'logs' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'
+                  }`}
               >
                 <Clock size={16} />
-                Logs
+                <span className="hidden sm:inline">Logs</span>
               </button>
             </div>
-            <button 
+            <button
               onClick={fetchData}
               disabled={loading}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors font-medium disabled:opacity-50 shadow-sm"
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors font-medium disabled:opacity-50 shadow-sm flex-shrink-0"
             >
               <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
-              Refresh
+              <span className="hidden sm:inline">Refresh</span>
             </button>
           </div>
         </header>
@@ -368,8 +417,8 @@ const App: React.FC = () => {
         <div className="mb-6 flex items-center justify-between">
           <div className="relative w-full max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            <input 
-              type="text" 
+            <input
+              type="text"
               placeholder="Search across your workspace..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -389,10 +438,10 @@ const App: React.FC = () => {
       </main>
 
       {selectedTask && (
-        <TaskDetail 
-          task={selectedTask} 
+        <TaskDetail
+          task={selectedTask}
           activities={taskActivities}
-          onClose={() => setSelectedTask(null)} 
+          onClose={() => setSelectedTask(null)}
         />
       )}
     </div>

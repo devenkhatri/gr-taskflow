@@ -10,12 +10,6 @@ interface ActivityLogsViewProps {
 }
 
 const ActivityLogsView: React.FC<ActivityLogsViewProps> = ({ tasks, activities, onTaskClick }) => {
-  const normalizeTs = (ts: any): string => {
-    if (!ts) return '';
-    const s = String(ts).trim();
-    return s.replace(/\s+/g, '');
-  };
-
   const parseDate = (dateStr: string) => {
     if (!dateStr) return new Date(0);
     if (dateStr.includes('Date(')) {
@@ -23,11 +17,11 @@ const ActivityLogsView: React.FC<ActivityLogsViewProps> = ({ tasks, activities, 
         const parts = dateStr.match(/\d+/g);
         if (parts && parts.length >= 3) {
           return new Date(
-            parseInt(parts[0]), 
-            parseInt(parts[1]), 
-            parseInt(parts[2]), 
-            parseInt(parts[3] || '0'), 
-            parseInt(parts[4] || '0'), 
+            parseInt(parts[0]),
+            parseInt(parts[1]),
+            parseInt(parts[2]),
+            parseInt(parts[3] || '0'),
+            parseInt(parts[4] || '0'),
             parseInt(parts[5] || '0')
           );
         }
@@ -35,14 +29,15 @@ const ActivityLogsView: React.FC<ActivityLogsViewProps> = ({ tasks, activities, 
     }
     return new Date(dateStr);
   };
-
   const groupedActivities = useMemo(() => {
     const groups = new Map<string, { task?: Task; logs: TaskActivity[] }>();
-    
+
     activities.forEach(log => {
-      const key = normalizeTs(log.actionTs);
+      const key = log.taskId;
+      if (!key) return; // Skip logs without taskId
+
       if (!groups.has(key)) {
-        const task = tasks.find(t => normalizeTs(t.messageTimestamp) === key);
+        const task = tasks.find(t => t.taskId === key);
         groups.set(key, { task, logs: [] });
       }
       groups.get(key)!.logs.push(log);
@@ -76,7 +71,7 @@ const ActivityLogsView: React.FC<ActivityLogsViewProps> = ({ tasks, activities, 
       {groupedActivities.map((group, gIdx) => (
         <div key={gIdx} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
           {/* Task Header */}
-          <div 
+          <div
             className="p-4 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors"
             onClick={() => group.task && onTaskClick(group.task)}
           >
@@ -101,7 +96,7 @@ const ActivityLogsView: React.FC<ActivityLogsViewProps> = ({ tasks, activities, 
                 <div className="absolute left-0 top-1 w-6 h-6 rounded-full bg-white border border-slate-200 flex items-center justify-center z-10">
                   <Activity size={12} className="text-indigo-500" />
                 </div>
-                
+
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
@@ -114,7 +109,7 @@ const ActivityLogsView: React.FC<ActivityLogsViewProps> = ({ tasks, activities, 
                     </div>
                     <p className="text-sm text-slate-600 font-medium leading-relaxed">{log.action}</p>
                   </div>
-                  
+
                   <div className="flex items-center gap-3 flex-shrink-0">
                     <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-lg">
                       <div className="w-5 h-5 rounded bg-indigo-100 flex items-center justify-center text-[9px] font-bold text-indigo-700">
