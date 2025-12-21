@@ -6,7 +6,7 @@ import {
 } from 'recharts';
 import {
   Search, Filter, Plus, Clock, AlertCircle, CheckCircle2,
-  Timer, MoreVertical, ExternalLink, Loader2, RefreshCw, LayoutGrid, List, BarChart, Menu, Columns3, Calendar
+  Timer, MoreVertical, ExternalLink, Loader2, RefreshCw, LayoutGrid, List, BarChart, Menu, Columns3, Calendar, XCircle
 } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import StatCard from './components/StatCard';
@@ -14,6 +14,8 @@ import TaskDetail from './components/TaskDetail';
 import KanbanBoard from './components/KanbanBoard';
 import AllTasksView from './components/AllTasksView';
 import ActivityLogsView from './components/ActivityLogsView';
+import ChannelsView from './components/ChannelsView';
+import UsersView from './components/UsersView';
 import { Task, TaskStatus, TaskActivity } from './types';
 
 const COLORS = ['#4f46e5', '#8b5cf6', '#f59e0b', '#3b82f6', '#10b981'];
@@ -29,8 +31,10 @@ const App: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-  const [viewMode, setViewMode] = useState<'dashboard' | 'kanban' | 'tasks' | 'logs'>('dashboard');
+  const [viewMode, setViewMode] = useState<'dashboard' | 'kanban' | 'tasks' | 'logs' | 'channels' | 'users'>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [channelList, setChannelList] = useState<{ id: string; name: string; purpose: string; taskEnabled: string; factCheckEnabled: string; aiEnabled: string }[]>([]);
+  const [userList, setUserList] = useState<{ id: string; name: string }[]>([]);
   const [selectedChannel, setSelectedChannel] = useState<string>('All');
   const [dateRange, setDateRange] = useState<{ start: string; end: string }>({ start: '', end: '' });
 
@@ -52,20 +56,129 @@ const App: React.FC = () => {
 
       // Fetching from specifically named sheets as per requirement
       // Sheet 1 is usually 'Sheet1' or 'Tasks', Sheet 2 is 'Tasks Activity Log'
-      const [taskRows, logRows] = await Promise.all([
+      const [taskRows, logRows, channelRows, userRows] = await Promise.all([
         fetchSheet('Sheet1'),
-        fetchSheet('Tasks Activity Log')
+        fetchSheet('Tasks Activity Log'),
+        fetchSheet('Active Channels'),
+        fetchSheet('Users')
       ]);
 
+      const channelMap = new Map<string, string>();
+      const userListTemp: { id: string; name: string }[] = [];
+      const channelListTemp: { id: string; name: string; purpose: string; taskEnabled: string; factCheckEnabled: string; aiEnabled: string }[] = [];
+      if (channelRows && channelRows.length > 0) {
+        // Find header row with robust matching
+        const headerRow = channelRows.find((r: any) => r.c && r.c.some((c: any) => {
+          const v = String(c?.v || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+          return v === 'channelid' || v === 'id';
+        }));
+
+        let idIdx = 0;
+        let nameIdx = 1;
+        let purposeIdx = 2;
+        let taskEnabledIdx = 3;
+        let factCheckEnabledIdx = 4;
+        let aiEnabledIdx = 5;
+
+        if (headerRow) {
+          const getI = (patterns: string[]) => headerRow.c.findIndex((c: any) => {
+            const v = String(c?.v || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            return patterns.includes(v);
+          });
+
+          const newId = getI(['channelid', 'id', 'Channel ID']);
+          const newName = getI(['channelname', 'name', 'channel', 'Channel Name']);
+          const newPurpose = getI(['purpose', 'description', 'Purpose']);
+          const newTask = getI(['taskmanagementenabled', 'taskenabled', 'task', 'Task Management Enabled?']);
+          const newFactCheck = getI(['articlefactcheckenabled', 'factcheckenabled', 'factcheck', 'Article FactCheck Enabled?']);
+          const newAI = getI(['aiarticleenabled', 'aienabled', 'ai', 'AI Article Enabled?']);
+
+          if (newId !== -1) idIdx = newId;
+          if (newName !== -1) nameIdx = newName;
+          if (newPurpose !== -1) purposeIdx = newPurpose;
+          if (newTask !== -1) taskEnabledIdx = newTask;
+          if (newFactCheck !== -1) factCheckEnabledIdx = newFactCheck;
+          if (newAI !== -1) aiEnabledIdx = newAI;
+        }
+
+        channelRows.forEach((row: any) => {
+          if (!row.c) return;
+          const id = String(row.c[idIdx]?.v || '').trim();
+          const name = String(row.c[nameIdx]?.v || '').trim();
+          const purpose = String(row.c[purposeIdx]?.v || '').trim();
+          const taskEnabled = String(row.c[taskEnabledIdx]?.v || '').trim();
+          const factCheckEnabled = String(row.c[factCheckEnabledIdx]?.v || '').trim();
+          const aiEnabled = String(row.c[aiEnabledIdx]?.v || '').trim();
+
+          // Avoid adding the header row itself to the map if it was matched by index but not filtered out
+          const isHeader = (val: string) => {
+            const v = val.toLowerCase().replace(/[^a-z0-9]/g, '');
+            return v === 'channelid' || v === 'id' || v === 'channelname' || v === 'name';
+          };
+
+          if (id && name && !isHeader(id)) {
+            channelMap.set(id, name);
+            channelListTemp.push({
+              id,
+              name,
+              purpose,
+              taskEnabled,
+              factCheckEnabled,
+              aiEnabled
+            });
+          }
+        });
+      }
+      // Process User List
+      if (userRows && userRows.length > 0) {
+        // Assume ID, Name columns
+        const headerRow = userRows.find((r: any) => r.c && r.c.some((c: any) => {
+          const v = String(c?.v || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+          return v === 'userid' || v === 'id';
+        }));
+
+        let idIdx = 0;
+        let nameIdx = 1;
+
+        if (headerRow) {
+          const getI = (patterns: string[]) => headerRow.c.findIndex((c: any) => {
+            const v = String(c?.v || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            return patterns.includes(v);
+          });
+
+          const newId = getI(['userid', 'id', 'User ID']);
+          const newName = getI(['username', 'name', 'User Name']);
+
+          if (newId !== -1) idIdx = newId;
+          if (newName !== -1) nameIdx = newName;
+        }
+
+        userRows.forEach((row: any) => {
+          if (!row.c) return;
+          const id = String(row.c[idIdx]?.v || '').trim();
+          const name = String(row.c[nameIdx]?.v || '').trim();
+
+          const isHeader = (val: string) => {
+            const v = val.toLowerCase().replace(/[^a-z0-9]/g, '');
+            return v === 'userid' || v === 'id' || v === 'username' || v === 'name';
+          };
+
+          if (id && name && !isHeader(id)) {
+            userListTemp.push({ id, name });
+          }
+        });
+      }
       const mappedTasks: Task[] = taskRows
         .map((row: any) => {
           const c = row.c;
           if (!c || !c[0]) return null;
           if (c[0]?.v === 'Task ID' || c[0]?.v === 'TaskID') return null;
 
+          const rawChannelId = String(c[1]?.v || '').trim();
+
           return {
             taskId: String(c[0]?.v || ''),
-            channelId: String(c[1]?.v || ''),
+            channelId: rawChannelId,
             message: String(c[2]?.v || ''),
             messageTimestamp: String(c[3]?.v || ''),
             user: String(c[4]?.v || ''),
@@ -73,7 +186,8 @@ const App: React.FC = () => {
             priority: String(c[6]?.v || 'Normal'),
             createdAt: String(c[7]?.v || ''),
             createdBy: String(c[8]?.v || ''),
-            lastAction: String(c[9]?.v || '')
+            lastAction: String(c[9]?.v || ''),
+            channelName: channelMap.get(rawChannelId) || rawChannelId
           };
         })
         .filter((t): t is Task => t !== null && !!t.taskId);
@@ -134,6 +248,8 @@ const App: React.FC = () => {
 
       setTasks(mappedTasks);
       setActivities(mappedLogs);
+      setChannelList(channelListTemp);
+      setUserList(userListTemp);
       setLastUpdated(new Date());
     } catch (err) {
       console.error("Fetch Error:", err);
@@ -148,7 +264,7 @@ const App: React.FC = () => {
   }, []);
 
   const availableChannels = useMemo(() => {
-    const channels = new Set(tasks.map(t => t.channelId || 'Uncategorized'));
+    const channels = new Set(tasks.map(t => t.channelName || t.channelId || 'Uncategorized'));
     return ['All', ...Array.from(channels).sort()];
   }, [tasks]);
 
@@ -179,7 +295,7 @@ const App: React.FC = () => {
         task.message?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         task.user?.toLowerCase().includes(searchTerm.toLowerCase());
 
-      const matchesChannel = selectedChannel === 'All' || (task.channelId || 'Uncategorized') === selectedChannel;
+      const matchesChannel = selectedChannel === 'All' || (task.channelName || task.channelId || 'Uncategorized') === selectedChannel;
 
       let matchesDate = true;
       if (dateRange.start || dateRange.end) {
@@ -256,6 +372,10 @@ const App: React.FC = () => {
             onTaskClick={setSelectedTask}
           />
         );
+      case 'channels':
+        return <ChannelsView channels={channelList} />;
+      case 'users':
+        return <UsersView users={userList} />;
       case 'dashboard':
       default:
         return (
@@ -405,7 +525,9 @@ const App: React.FC = () => {
               <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
                 {viewMode === 'dashboard' ? 'Analytics Overview' :
                   viewMode === 'kanban' ? 'Kanban Board' :
-                    viewMode === 'tasks' ? 'Task Status Matrix' : 'Audit Logs & Activities'}
+                    viewMode === 'tasks' ? 'Task Status Matrix' :
+                      viewMode === 'logs' ? 'Audit Logs & Activities' :
+                        viewMode === 'channels' ? 'Channel Management' : 'User Management'}
               </h1>
               <div className="flex items-center gap-2 mt-1">
                 <p className="hidden xs:block text-slate-500 text-sm">Real-time Task Tracking</p>
@@ -506,6 +628,18 @@ const App: React.FC = () => {
                 placeholder="End Date"
               />
             </div>
+            {(selectedChannel !== 'All' || dateRange.start || dateRange.end) && (
+              <button
+                onClick={() => {
+                  setSelectedChannel('All');
+                  setDateRange({ start: '', end: '' });
+                }}
+                className="flex items-center gap-1 px-3 py-2 text-rose-500 bg-rose-50 hover:bg-rose-100 rounded-xl transition-colors text-xs font-bold uppercase shadow-sm border border-rose-100"
+              >
+                <XCircle size={14} />
+                <span className="hidden sm:inline">Clear</span>
+              </button>
+            )}
           </div>
         </div>
 

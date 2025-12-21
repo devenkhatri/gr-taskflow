@@ -3,8 +3,8 @@ import React from 'react';
 import { LayoutDashboard, CheckCircle2, ClipboardList, Clock, Settings, User, Columns3, Activity } from 'lucide-react';
 
 interface SidebarProps {
-  currentView: 'dashboard' | 'kanban' | 'tasks' | 'logs';
-  onViewChange: (view: 'dashboard' | 'kanban' | 'tasks' | 'logs') => void;
+  currentView: 'dashboard' | 'kanban' | 'tasks' | 'logs' | 'channels' | 'users';
+  onViewChange: (view: 'dashboard' | 'kanban' | 'tasks' | 'logs' | 'channels' | 'users') => void;
 }
 
 const Sidebar: React.FC<SidebarProps & { isOpen: boolean; onClose: () => void }> = ({ currentView, onViewChange, isOpen, onClose }) => {
@@ -52,8 +52,8 @@ const Sidebar: React.FC<SidebarProps & { isOpen: boolean; onClose: () => void }>
               key={item.id}
               onClick={() => handleViewChange(item.id)}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${currentView === item.id
-                  ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+                ? 'bg-indigo-50 text-indigo-700 font-semibold'
+                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
                 }`}
             >
               <span className={`${currentView === item.id ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'}`}>
@@ -66,13 +66,25 @@ const Sidebar: React.FC<SidebarProps & { isOpen: boolean; onClose: () => void }>
           <div className="mt-8 px-4 mb-2">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Management</p>
           </div>
-          <button className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all opacity-50 cursor-not-allowed">
-            <User size={20} className="text-slate-400" />
-            <span>Team Members</span>
+          <button
+            onClick={() => handleViewChange('channels')}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${currentView === 'channels'
+              ? 'bg-indigo-50 text-indigo-700 font-semibold'
+              : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+              }`}
+          >
+            <Columns3 size={20} className={currentView === 'channels' ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'} />
+            <span>Channels</span>
           </button>
-          <button className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-all opacity-50 cursor-not-allowed">
-            <Settings size={20} className="text-slate-400" />
-            <span>Settings</span>
+          <button
+            onClick={() => handleViewChange('users')}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${currentView === 'users'
+              ? 'bg-indigo-50 text-indigo-700 font-semibold'
+              : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+              }`}
+          >
+            <User size={20} className={currentView === 'users' ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'} />
+            <span>Users</span>
           </button>
         </nav>
 

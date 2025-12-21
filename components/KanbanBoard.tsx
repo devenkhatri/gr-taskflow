@@ -50,9 +50,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, onTaskClick }) => {
                         <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded shadow-sm border border-indigo-100">
                           {task.taskId}
                         </span>
-                        {task.channelId && (
+                        {task.channelName && (
                           <span className="text-[9px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 truncate max-w-[100px]">
-                            {task.channelId}
+                            {task.channelName}
                           </span>
                         )}
                       </div>
@@ -74,8 +74,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, onTaskClick }) => {
                       </div>
                       {task.priority && (
                         <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded shadow-sm ${task.priority.toLowerCase() === 'high'
-                            ? 'text-rose-600 bg-rose-50 border border-rose-100'
-                            : 'text-slate-400 bg-slate-50 border border-slate-100'
+                          ? 'text-rose-600 bg-rose-50 border border-rose-100'
+                          : 'text-slate-400 bg-slate-50 border border-slate-100'
                           }`}>
                           {task.priority}
                         </span>

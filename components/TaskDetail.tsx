@@ -32,11 +32,11 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ task, activities, onClose }) =>
         if (parts && parts.length >= 3) {
           // JS Date month is 0-indexed, which matches Google's export
           return new Date(
-            parseInt(parts[0]), 
-            parseInt(parts[1]), 
-            parseInt(parts[2]), 
-            parseInt(parts[3] || '0'), 
-            parseInt(parts[4] || '0'), 
+            parseInt(parts[0]),
+            parseInt(parts[1]),
+            parseInt(parts[2]),
+            parseInt(parts[3] || '0'),
+            parseInt(parts[4] || '0'),
             parseInt(parts[5] || '0')
           );
         }
@@ -62,7 +62,7 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ task, activities, onClose }) =>
             </span>
             <h2 className="text-xl font-extrabold text-slate-800 tracking-tight">Audit Trail</h2>
           </div>
-          <button 
+          <button
             onClick={onClose}
             className="p-2 hover:bg-slate-200 rounded-full text-slate-500 transition-colors border border-transparent hover:border-slate-300"
           >
@@ -79,9 +79,11 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ task, activities, onClose }) =>
                 {task.status}
               </span>
               <span className="text-sm text-slate-300">|</span>
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">ID: {task.channelId}</span>
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                Channel: {task.channelName || task.channelId}
+              </span>
             </div>
-            
+
             <div className="relative">
               <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500 rounded-full"></div>
               <p className="text-lg text-slate-700 leading-relaxed font-semibold bg-indigo-50/30 p-5 rounded-r-2xl border-y border-r border-indigo-100/50">
@@ -132,7 +134,7 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ task, activities, onClose }) =>
               </h3>
               <div className="h-px bg-slate-100 flex-1 ml-4"></div>
             </div>
-            
+
             <div className="space-y-8">
               {sortedActivities.length > 0 ? sortedActivities.map((activity, idx) => (
                 <div key={idx} className="relative pl-10 before:absolute before:left-4 before:top-4 before:bottom-0 before:w-0.5 before:bg-slate-100 last:before:hidden">

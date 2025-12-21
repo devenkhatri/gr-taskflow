@@ -38,7 +38,7 @@ const AllTasksView: React.FC<AllTasksViewProps> = ({ tasks, activities, onTaskCl
   const tasksByChannel = React.useMemo(() => {
     const groups: { [key: string]: Task[] } = {};
     tasks.forEach(task => {
-      const channel = task.channelId || 'Uncategorized';
+      const channel = task.channelName || 'Uncategorized';
       if (!groups[channel]) groups[channel] = [];
       groups[channel].push(task);
     });
@@ -93,8 +93,8 @@ const AllTasksView: React.FC<AllTasksViewProps> = ({ tasks, activities, onTaskCl
                             <div className="flex justify-center items-center">
                               {hasPassed ? (
                                 <div className={`p-1.5 rounded-full transition-all duration-300 ${isCurrent
-                                    ? 'bg-indigo-600 text-white shadow-md scale-110'
-                                    : 'bg-emerald-100 text-emerald-600'
+                                  ? 'bg-indigo-600 text-white shadow-md scale-110'
+                                  : 'bg-emerald-100 text-emerald-600'
                                   }`}>
                                   <Check size={14} strokeWidth={3} />
                                 </div>

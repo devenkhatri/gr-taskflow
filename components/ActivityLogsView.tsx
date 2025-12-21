@@ -79,6 +79,11 @@ const ActivityLogsView: React.FC<ActivityLogsViewProps> = ({ tasks, activities, 
               <div className="px-3 py-1 bg-indigo-600 text-white rounded-lg font-bold text-[10px] shadow-sm uppercase">
                 {group.task?.taskId || 'Unknown Task'}
               </div>
+              {group.task?.channelName && (
+                <div className="px-2 py-1 bg-slate-100 text-slate-500 border border-slate-200 rounded-lg font-bold text-[10px] uppercase hidden sm:block">
+                  {group.task.channelName}
+                </div>
+              )}
               <p className="text-sm font-semibold text-slate-700 max-w-md truncate">
                 {group.task?.message || 'Archived or deleted task content'}
               </p>

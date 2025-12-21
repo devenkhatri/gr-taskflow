@@ -31,6 +31,7 @@ export interface Task {
   updatedAt?: string;
   updatedBy?: string;
   lastAction: string;
+  channelName?: string;
 }
 
 export interface DashboardStats {
