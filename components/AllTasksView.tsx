@@ -127,9 +127,15 @@ const AllTasksView: React.FC<AllTasksViewProps> = ({ tasks, activities, stages, 
                             <div className="flex justify-center items-center">
                               {hasPassed ? (
                                 <div className={`p-0.5 md:p-1.5 rounded-full transition-all duration-300 ${isCurrent
-                                  ? 'bg-indigo-600 text-white shadow-md scale-105 md:scale-110'
+                                  ? (stage.toLowerCase().includes('new') || stage.toLowerCase().includes('incoming') ? 'bg-amber-600 text-white' :
+                                    stage.toLowerCase().includes('todo') ? 'bg-blue-600 text-white' :
+                                      stage.toLowerCase().includes('pickup') || stage.toLowerCase().includes('picked') ? 'bg-purple-600 text-white' :
+                                        stage.toLowerCase().includes('progress') ? 'bg-orange-600 text-white' :
+                                          stage.toLowerCase().includes('created') ? 'bg-indigo-600 text-white' :
+                                            stage.toLowerCase().includes('done') || stage.toLowerCase().includes('complete') ? 'bg-emerald-600 text-white' :
+                                              'bg-slate-600 text-white')
                                   : 'bg-emerald-100 text-emerald-600'
-                                  }`}>
+                                  } shadow-md ${isCurrent ? 'scale-105 md:scale-110' : ''}`}>
                                   <Check size={10} className="md:w-3.5 md:h-3.5" strokeWidth={3} />
                                 </div>
                               ) : (

@@ -66,10 +66,11 @@ const ActivityLogsView: React.FC<ActivityLogsViewProps> = ({ tasks, activities, 
 
   const getStatusColor = (status?: TaskStatus) => {
     const s = status?.toLowerCase() || ''; // Handle undefined status
-    if (s.includes('new') || s.includes('incoming')) return 'text-blue-600 bg-blue-50';
-    if (s.includes('todo')) return 'text-yellow-600 bg-yellow-50';
+    if (s.includes('new') || s.includes('incoming')) return 'text-amber-600 bg-amber-50';
+    if (s.includes('todo')) return 'text-blue-600 bg-blue-50';
     if (s.includes('pickup') || s.includes('picked')) return 'text-purple-600 bg-purple-50';
     if (s.includes('progress')) return 'text-orange-600 bg-orange-50';
+    if (s.includes('created')) return 'text-indigo-600 bg-indigo-50';
     if (s.includes('done') || s.includes('complete')) return 'text-emerald-600 bg-emerald-50';
     return 'text-slate-600 bg-slate-50';
   };

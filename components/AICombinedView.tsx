@@ -138,9 +138,22 @@ const AICombinedView: React.FC<AICombinedViewProps> = ({ tasks, activities }) =>
                                     <td className="px-6 py-4 align-top">
                                         <p className="text-sm text-slate-700 font-medium line-clamp-2">{item.message}</p>
                                         <div className="flex gap-2 mt-2">
-                                            <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded border ${item.status.toLowerCase().includes('done') ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-500 border-slate-100'}`}>
-                                                {item.status}
-                                            </span>
+                                            {(() => {
+                                                const s = item.status.toLowerCase();
+                                                let style = 'bg-slate-50 text-slate-500 border-slate-100';
+                                                if (s.includes('new') || s.includes('incoming')) style = 'bg-amber-100 text-amber-700 border-amber-200';
+                                                else if (s.includes('todo')) style = 'bg-blue-100 text-blue-700 border-blue-200';
+                                                else if (s.includes('pickup') || s.includes('picked')) style = 'bg-purple-100 text-purple-700 border-purple-200';
+                                                else if (s.includes('progress')) style = 'bg-orange-100 text-orange-700 border-orange-200';
+                                                else if (s.includes('created')) style = 'bg-indigo-100 text-indigo-700 border-indigo-200';
+                                                else if (s.includes('done') || s.includes('complete')) style = 'bg-emerald-100 text-emerald-700 border-emerald-200';
+
+                                                return (
+                                                    <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded border ${style}`}>
+                                                        {item.status}
+                                                    </span>
+                                                );
+                                            })()}
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 align-top">

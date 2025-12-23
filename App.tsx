@@ -443,11 +443,12 @@ const App: React.FC = () => {
 
   const getStatusStyle = (status: string) => {
     const s = status.toLowerCase();
-    if (s.includes('new') || s.includes('incoming')) return 'bg-blue-100 text-blue-700 border-blue-200';
-    if (s.includes('todo')) return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+    if (s.includes('new') || s.includes('incoming')) return 'bg-amber-100 text-amber-700 border-amber-200';
+    if (s.includes('todo')) return 'bg-blue-100 text-blue-700 border-blue-200';
     if (s.includes('pickup') || s.includes('picked')) return 'bg-purple-100 text-purple-700 border-purple-200';
     if (s.includes('progress')) return 'bg-orange-100 text-orange-700 border-orange-200';
-    if (s.includes('done') || s.includes('complete')) return 'bg-green-100 text-green-700 border-green-200';
+    if (s.includes('created')) return 'bg-indigo-100 text-indigo-700 border-indigo-200';
+    if (s.includes('done') || s.includes('complete')) return 'bg-emerald-100 text-emerald-700 border-emerald-200';
     return 'bg-slate-100 text-slate-700 border-slate-200';
   };
 
@@ -457,7 +458,7 @@ const App: React.FC = () => {
     if (s.includes('todo')) return <List size={24} className="text-blue-600" />;
     if (s.includes('pickup') || s.includes('picked')) return <NotepadText size={24} className="text-purple-600" />;
     if (s.includes('progress')) return <RefreshCw size={24} className="text-orange-600" />;
-    if (s.includes('created')) return <ClipboardCheck size={24} className="text-green-600" />;
+    if (s.includes('created')) return <ClipboardCheck size={24} className="text-indigo-600" />;
     if (s.includes('done') || s.includes('complete')) return <CheckCircle2 size={24} className="text-emerald-600" />;
     return <AlertCircle size={24} className="text-slate-600" />;
   };
@@ -468,9 +469,20 @@ const App: React.FC = () => {
     if (s.includes('todo')) return 'bg-blue-50';
     if (s.includes('pickup') || s.includes('picked')) return 'bg-purple-50';
     if (s.includes('progress')) return 'bg-orange-50';
-    if (s.includes('created')) return 'bg-blue-50';
+    if (s.includes('created')) return 'bg-indigo-50';
     if (s.includes('done') || s.includes('complete')) return 'bg-emerald-50';
     return 'bg-slate-50';
+  };
+
+  const getStageHexColor = (status: string) => {
+    const s = status.toLowerCase();
+    if (s.includes('new') || s.includes('incoming')) return '#f59e0b'; // Amber 500
+    if (s.includes('todo')) return '#3b82f6'; // Blue 500
+    if (s.includes('pickup') || s.includes('picked')) return '#a855f7'; // Purple 500
+    if (s.includes('progress')) return '#f97316'; // Orange 500
+    if (s.includes('created')) return '#6366f1'; // Indigo 500
+    if (s.includes('done') || s.includes('complete')) return '#10b981'; // Emerald 500
+    return '#94a3b8'; // Slate 400
   };
 
   const renderContent = () => {
@@ -552,7 +564,11 @@ const App: React.FC = () => {
                         cursor={{ fill: '#f8fafc' }}
                         contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                       />
-                      <Bar dataKey="value" fill="#4f46e5" radius={[6, 6, 0, 0]} barSize={40} />
+                      <Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={40}>
+                        {chartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={getStageHexColor(entry.name)} />
+                        ))}
+                      </Bar>
                     </RechartsBarChart>
                   </ResponsiveContainer>
                 </div>
@@ -573,7 +589,7 @@ const App: React.FC = () => {
                         dataKey="value"
                       >
                         {chartData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          <Cell key={`cell-${index}`} fill={getStageHexColor(entry.name)} />
                         ))}
                       </Pie>
                       <Tooltip />

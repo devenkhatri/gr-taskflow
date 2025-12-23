@@ -12,12 +12,13 @@ interface TaskDetailProps {
 }
 
 const TaskDetail: React.FC<TaskDetailProps> = ({ task, activities, stages, onClose }) => {
-  const getStatusColor = (status: TaskStatus) => {
+  const getStatusColor = (status: string) => {
     const s = status.toLowerCase();
-    if (s.includes('new') || s.includes('incoming')) return 'bg-blue-100 text-blue-700';
-    if (s.includes('todo')) return 'bg-yellow-100 text-yellow-700';
+    if (s.includes('new') || s.includes('incoming')) return 'bg-amber-100 text-amber-700';
+    if (s.includes('todo')) return 'bg-blue-100 text-blue-700';
     if (s.includes('pickup') || s.includes('picked')) return 'bg-purple-100 text-purple-700';
     if (s.includes('progress')) return 'bg-orange-100 text-orange-700';
+    if (s.includes('created')) return 'bg-indigo-100 text-indigo-700';
     if (s.includes('done') || s.includes('complete')) return 'bg-green-100 text-green-700';
     return 'bg-slate-100 text-slate-700';
   };

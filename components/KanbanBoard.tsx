@@ -24,10 +24,11 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, stages, onTaskClick })
 
   const getStageColor = (stage: string) => {
     const s = stage.toLowerCase();
-    if (s.includes('new') || s.includes('incoming')) return 'bg-blue-500';
-    if (s.includes('todo')) return 'bg-yellow-500';
+    if (s.includes('new') || s.includes('incoming')) return 'bg-amber-500';
+    if (s.includes('todo')) return 'bg-blue-500';
     if (s.includes('pickup') || s.includes('picked')) return 'bg-purple-500';
     if (s.includes('progress')) return 'bg-orange-500';
+    if (s.includes('created')) return 'bg-indigo-500';
     if (s.includes('done') || s.includes('complete')) return 'bg-emerald-500';
     return 'bg-slate-400';
   };
