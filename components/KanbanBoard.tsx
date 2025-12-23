@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MoreHorizontal, Plus, User, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MoreHorizontal, Plus, User, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
 import { Task, TaskStatus } from '../types';
 
 interface KanbanBoardProps {
@@ -116,6 +116,18 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, stages, onTaskClick })
                             <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded shadow-sm border border-indigo-100">
                               {task.taskId}
                             </span>
+                            {task.messageUrl && (
+                              <a
+                                href={task.messageUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="text-slate-400 hover:text-indigo-600 transition-colors"
+                                title="View on Slack"
+                              >
+                                <ExternalLink size={10} />
+                              </a>
+                            )}
                             {task.channelName && (
                               <span className="text-[9px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 truncate max-w-[100px]">
                                 {task.channelName}

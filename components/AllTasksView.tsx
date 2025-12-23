@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Check, MessageSquare, User as UserIcon } from 'lucide-react';
+import { Check, MessageSquare, User as UserIcon, ExternalLink } from 'lucide-react';
 import { Task, TaskStatus, TaskActivity } from '../types';
 
 interface AllTasksViewProps {
@@ -108,6 +108,18 @@ const AllTasksView: React.FC<AllTasksViewProps> = ({ tasks, activities, stages, 
                         <div className="flex flex-col gap-0">
                           <div className="flex items-center gap-1">
                             <span className="font-bold text-indigo-600 tracking-tighter text-[9px] md:text-xs">{task.taskId}</span>
+                            {task.messageUrl && (
+                              <a
+                                href={task.messageUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="inline-flex text-slate-400 hover:text-indigo-600 transition-colors"
+                                title="View on Slack"
+                              >
+                                <ExternalLink size={10} />
+                              </a>
+                            )}
                             <span className="text-[8px] md:text-[10px] text-slate-400 font-medium truncate">• {task.updatedBy || task.createdBy || task.user}</span>
                           </div>
                           <p className="text-[10px] md:text-sm font-medium text-slate-700 line-clamp-1">

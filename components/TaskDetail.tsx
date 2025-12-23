@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { X, Calendar, User, Hash, MessageSquare, History, Clock } from 'lucide-react';
+import { X, Calendar, User, Hash, MessageSquare, History, Clock, ExternalLink } from 'lucide-react';
 import { Task, TaskActivity, TaskStatus } from '../types';
 import StageTracker from './StageTracker';
 
@@ -135,6 +135,24 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ task, activities, stages, onClo
                 </p>
               </div>
             </div>
+            {task.messageUrl && (
+              <div className="col-span-2 p-4 rounded-xl border border-slate-100 flex items-center gap-4 bg-slate-50/50">
+                <div className="p-2.5 bg-white rounded-lg text-indigo-500 shadow-sm border border-slate-100">
+                  <ExternalLink size={20} />
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Original Message</p>
+                  <a
+                    href={task.messageUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 transition-colors"
+                  >
+                    View on Slack <ExternalLink size={14} />
+                  </a>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Activity Logs */}

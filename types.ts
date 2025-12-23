@@ -26,6 +26,7 @@ export interface Task {
   updatedBy?: string;
   lastAction: string;
   channelName?: string;
+  messageUrl?: string;
 }
 
 export interface DashboardStats {

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Bot, Search, Filter, Sparkles, CheckCircle, FileText, ChevronDown, ChevronRight, LayoutGrid } from 'lucide-react';
+import { Bot, Search, Filter, Sparkles, CheckCircle, FileText, ChevronDown, ChevronRight, LayoutGrid, ExternalLink } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Task, TaskActivity, TaskStatus } from '../types';
 
@@ -131,9 +131,23 @@ const AICombinedView: React.FC<AICombinedViewProps> = ({ tasks, activities }) =>
                                         {expandedRow === item.taskId ? <ChevronDown size={16} className="text-indigo-500" /> : <ChevronRight size={16} className="text-slate-400" />}
                                     </td>
                                     <td className="px-6 py-4 align-top">
-                                        <span className="font-mono text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded border border-indigo-100 whitespace-nowrap">
-                                            {item.taskId}
-                                        </span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-mono text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded border border-indigo-100 whitespace-nowrap">
+                                                {item.taskId}
+                                            </span>
+                                            {item.messageUrl && (
+                                                <a
+                                                    href={item.messageUrl}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    className="text-slate-400 hover:text-indigo-600 transition-colors"
+                                                    title="View on Slack"
+                                                >
+                                                    <ExternalLink size={14} />
+                                                </a>
+                                            )}
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4 align-top">
                                         <p className="text-sm text-slate-700 font-medium line-clamp-2">{item.message}</p>

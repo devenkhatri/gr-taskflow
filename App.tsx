@@ -224,7 +224,7 @@ const App: React.FC = () => {
         let iMap = {
           taskId: 0, channelId: 1, message: 2, messageTimestamp: 3, user: 4,
           status: 5, priority: 6, createdAt: 7, createdBy: 8, lastAction: 9,
-          updatedAt: 10, updatedBy: 11
+          updatedAt: 10, updatedBy: 11, messageUrl: 12
         };
 
         if (headerRow) {
@@ -247,7 +247,8 @@ const App: React.FC = () => {
               createdBy: getI(['createdby', 'creator']),
               lastAction: getI(['lastaction']),
               updatedAt: getI(['updatedat']),
-              updatedBy: getI(['updatedby'])
+              updatedBy: getI(['updatedby']),
+              messageUrl: getI(['messageurl', 'url', 'link'])
             };
           }
         }
@@ -273,7 +274,8 @@ const App: React.FC = () => {
             updatedAt: iMap.updatedAt !== -1 ? String(c[iMap.updatedAt]?.v || '') : '',
             updatedBy: iMap.updatedBy !== -1 ? String(c[iMap.updatedBy]?.v || '') : '',
             lastAction: String(c[iMap.lastAction]?.v || ''),
-            channelName: channelMap.get(rawChannelId) || rawChannelId
+            channelName: channelMap.get(rawChannelId) || rawChannelId,
+            messageUrl: (iMap.messageUrl !== -1 && c[iMap.messageUrl]) ? String(c[iMap.messageUrl]?.v || '') : ''
           };
         }).filter((t): t is Task => t !== null && !!t.taskId);
       })();
@@ -672,7 +674,23 @@ const App: React.FC = () => {
                         className="hover:bg-indigo-50/30 transition-colors cursor-pointer"
                         onClick={() => setSelectedTask(task)}
                       >
-                        <td className="px-6 py-5 font-bold text-indigo-600 text-xs">{task.taskId}</td>
+                        <td className="px-6 py-5 font-bold text-indigo-600 text-xs">
+                          <div className="flex items-center gap-2">
+                            {task.taskId}
+                            {task.messageUrl && (
+                              <a
+                                href={task.messageUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="text-slate-400 hover:text-indigo-600 transition-colors"
+                                title="View on Slack"
+                              >
+                                <ExternalLink size={12} />
+                              </a>
+                            )}
+                          </div>
+                        </td>
                         <td className="px-6 py-5 max-w-xs truncate text-sm text-slate-700">{task.message}</td>
                         <td className="px-6 py-5">
                           <div className="flex items-center gap-2">

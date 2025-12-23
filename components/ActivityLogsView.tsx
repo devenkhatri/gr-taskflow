@@ -1,6 +1,6 @@
 
 import React, { useMemo } from 'react';
-import { History, MessageSquare, User as UserIcon, Clock, ChevronRight, Activity } from 'lucide-react';
+import { History, MessageSquare, User as UserIcon, Clock, ChevronRight, Activity, ExternalLink } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Task, TaskStatus, TaskActivity } from '../types';
 
@@ -88,6 +88,18 @@ const ActivityLogsView: React.FC<ActivityLogsViewProps> = ({ tasks, activities, 
               <div className="px-3 py-1 bg-indigo-600 text-white rounded-lg font-bold text-[10px] shadow-sm uppercase">
                 {group.task?.taskId || 'Unknown Task'}
               </div>
+              {group.task?.messageUrl && (
+                <a
+                  href={group.task.messageUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-slate-400 hover:text-indigo-600 transition-colors"
+                  title="View on Slack"
+                >
+                  <ExternalLink size={14} />
+                </a>
+              )}
               {group.task?.channelName && (
                 <div className="px-2 py-1 bg-slate-100 text-slate-500 border border-slate-200 rounded-lg font-bold text-[10px] uppercase hidden sm:block">
                   {group.task.channelName}
