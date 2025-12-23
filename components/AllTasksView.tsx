@@ -121,11 +121,13 @@ const AllTasksView: React.FC<AllTasksViewProps> = ({ tasks, activities, stages, 
                       {stages.map((stage) => {
                         const hasPassed = reached.has(stage);
                         const isCurrent = task.status === stage;
+                        const isNewStage = stage.toLowerCase() === 'new' || stage.toLowerCase() === 'incoming';
+                        const shouldShowTick = isNewStage ? isCurrent : hasPassed;
 
                         return (
                           <td key={stage} className="px-1 md:px-6 py-2 md:py-5 text-center border-b border-slate-50">
                             <div className="flex justify-center items-center">
-                              {hasPassed ? (
+                              {shouldShowTick ? (
                                 <div className={`p-0.5 md:p-1.5 rounded-full transition-all duration-300 ${isCurrent
                                   ? (stage.toLowerCase().includes('new') || stage.toLowerCase().includes('incoming') ? 'bg-amber-600 text-white' :
                                     stage.toLowerCase().includes('todo') ? 'bg-blue-600 text-white' :

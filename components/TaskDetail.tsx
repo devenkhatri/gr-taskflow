@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useEffect } from 'react';
 import { X, Calendar, User, Hash, MessageSquare, History, Clock } from 'lucide-react';
 import { Task, TaskActivity, TaskStatus } from '../types';
 import StageTracker from './StageTracker';
@@ -12,6 +11,18 @@ interface TaskDetailProps {
 }
 
 const TaskDetail: React.FC<TaskDetailProps> = ({ task, activities, stages, onClose }) => {
+  useEffect(() => {
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => {
+      window.removeEventListener('keydown', handleEsc);
+    };
+  }, [onClose]);
+
   const getStatusColor = (status: string) => {
     const s = status.toLowerCase();
     if (s.includes('new') || s.includes('incoming')) return 'bg-amber-100 text-amber-700';
