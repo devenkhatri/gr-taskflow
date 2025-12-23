@@ -108,7 +108,7 @@ const AllTasksView: React.FC<AllTasksViewProps> = ({ tasks, activities, stages, 
                         <div className="flex flex-col gap-0">
                           <div className="flex items-center gap-1">
                             <span className="font-bold text-indigo-600 tracking-tighter text-[9px] md:text-xs">{task.taskId}</span>
-                            <span className="text-[8px] md:text-[10px] text-slate-400 font-medium truncate">• {task.user}</span>
+                            <span className="text-[8px] md:text-[10px] text-slate-400 font-medium truncate">• {task.updatedBy || task.createdBy || task.user}</span>
                           </div>
                           <p className="text-[10px] md:text-sm font-medium text-slate-700 line-clamp-1">
                             <span className="md:hidden">

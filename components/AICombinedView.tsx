@@ -137,7 +137,7 @@ const AICombinedView: React.FC<AICombinedViewProps> = ({ tasks, activities }) =>
                                     </td>
                                     <td className="px-6 py-4 align-top">
                                         <p className="text-sm text-slate-700 font-medium line-clamp-2">{item.message}</p>
-                                        <div className="flex gap-2 mt-2">
+                                        <div className="flex gap-2 mt-2 items-center">
                                             {(() => {
                                                 const s = item.status.toLowerCase();
                                                 let style = 'bg-slate-50 text-slate-500 border-slate-100';
@@ -154,6 +154,9 @@ const AICombinedView: React.FC<AICombinedViewProps> = ({ tasks, activities }) =>
                                                     </span>
                                                 );
                                             })()}
+                                            <span className="text-[10px] text-slate-400 font-bold truncate">
+                                                • {item.updatedBy || item.createdBy || item.user}
+                                            </span>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 align-top">

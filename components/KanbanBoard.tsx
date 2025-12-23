@@ -134,9 +134,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, stages, onTaskClick })
                         <div className="flex items-center justify-between pt-3 border-t border-slate-50 mt-auto">
                           <div className="flex items-center gap-2">
                             <div className="w-6 h-6 rounded-full bg-indigo-50 flex items-center justify-center text-[10px] font-bold text-indigo-500 border border-indigo-100">
-                              {task.user?.substring(0, 2).toUpperCase() || '?'}
+                              {(task.updatedBy || task.createdBy || task.user || '?').substring(0, 2).toUpperCase()}
                             </div>
-                            <span className="text-[10px] font-semibold text-slate-500 truncate max-w-[80px]">{task.user}</span>
+                            <span className="text-[10px] font-semibold text-slate-500 truncate max-w-[80px]">{task.updatedBy || task.createdBy || task.user}</span>
                           </div>
                           {task.priority && (
                             <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded shadow-sm ${task.priority.toLowerCase() === 'high'

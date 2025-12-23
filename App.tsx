@@ -215,29 +215,68 @@ const App: React.FC = () => {
           }
         });
       }
-      const mappedTasks: Task[] = taskRows
-        .map((row: any) => {
-          const c = row.c;
-          if (!c || !c[0]) return null;
-          if (c[0]?.v === 'Task ID' || c[0]?.v === 'TaskID') return null;
+      const mappedTasks: Task[] = (() => {
+        const headerRow = taskRows.find((r: any) => r.c && r.c.some((c: any) => {
+          const v = String(c?.v || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+          return v === 'taskid' || v === 'id';
+        }));
 
-          const rawChannelId = String(c[1]?.v || '').trim();
+        let iMap = {
+          taskId: 0, channelId: 1, message: 2, messageTimestamp: 3, user: 4,
+          status: 5, priority: 6, createdAt: 7, createdBy: 8, lastAction: 9,
+          updatedAt: 10, updatedBy: 11
+        };
+
+        if (headerRow) {
+          const getI = (patterns: string[]) => headerRow.c.findIndex((c: any) => {
+            const v = String(c?.v || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            return patterns.some(p => v === p.toLowerCase().replace(/[^a-z0-9]/g, ''));
+          });
+
+          const newId = getI(['taskid', 'id']);
+          if (newId !== -1) {
+            iMap = {
+              taskId: newId,
+              channelId: getI(['channelid', 'channel']),
+              message: getI(['message', 'text', 'content']),
+              messageTimestamp: getI(['messagetimestamp', 'timestamp']),
+              user: getI(['user', 'sender']),
+              status: getI(['status', 'state']),
+              priority: getI(['priority']),
+              createdAt: getI(['createdat', 'creationtime']),
+              createdBy: getI(['createdby', 'creator']),
+              lastAction: getI(['lastaction']),
+              updatedAt: getI(['updatedat']),
+              updatedBy: getI(['updatedby'])
+            };
+          }
+        }
+
+        return taskRows.map((row: any) => {
+          const c = row.c;
+          if (!c || !c[iMap.taskId]) return null;
+          const taskId = String(c[iMap.taskId]?.v || '');
+          if (taskId.toLowerCase().replace(/[^a-z0-9]/g, '') === 'taskid') return null;
+
+          const rawChannelId = String(c[iMap.channelId]?.v || '').trim();
 
           return {
-            taskId: String(c[0]?.v || ''),
+            taskId: taskId,
             channelId: rawChannelId,
-            message: String(c[2]?.v || ''),
-            messageTimestamp: String(c[3]?.v || ''),
-            user: String(c[4]?.v || ''),
-            status: String(c[5]?.v || 'NEW'),
-            priority: String(c[6]?.v || 'Normal'),
-            createdAt: String(c[7]?.v || ''),
-            createdBy: String(c[8]?.v || ''),
-            lastAction: String(c[9]?.v || ''),
+            message: String(c[iMap.message]?.v || ''),
+            messageTimestamp: String(c[iMap.messageTimestamp]?.v || ''),
+            user: String(c[iMap.user]?.v || ''),
+            status: String(c[iMap.status]?.v || 'NEW'),
+            priority: String(c[iMap.priority]?.v || 'Normal'),
+            createdAt: String(c[iMap.createdAt]?.v || ''),
+            createdBy: String(c[iMap.createdBy]?.v || ''),
+            updatedAt: iMap.updatedAt !== -1 ? String(c[iMap.updatedAt]?.v || '') : '',
+            updatedBy: iMap.updatedBy !== -1 ? String(c[iMap.updatedBy]?.v || '') : '',
+            lastAction: String(c[iMap.lastAction]?.v || ''),
             channelName: channelMap.get(rawChannelId) || rawChannelId
           };
-        })
-        .filter((t): t is Task => t !== null && !!t.taskId);
+        }).filter((t): t is Task => t !== null && !!t.taskId);
+      })();
 
       // Create a map of Message Timestamp -> Task ID for backfilling missing IDs in logs
       const timestampToTaskIdMap = new Map<string, string>();
@@ -357,7 +396,9 @@ const App: React.FC = () => {
     const filtered = tasks.filter(task => {
       const matchesSearch = task.taskId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         task.message?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        task.user?.toLowerCase().includes(searchTerm.toLowerCase());
+        task.user?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        task.updatedBy?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        task.createdBy?.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesChannel = selectedChannel === 'All' || (task.channelName || task.channelId || 'Uncategorized') === selectedChannel;
 
@@ -620,6 +661,7 @@ const App: React.FC = () => {
                     <tr>
                       <th className="px-6 py-4">ID</th>
                       <th className="px-6 py-4">Task Details</th>
+                      <th className="px-6 py-4">Task Owner</th>
                       <th className="px-6 py-4">Status</th>
                     </tr>
                   </thead>
@@ -632,6 +674,14 @@ const App: React.FC = () => {
                       >
                         <td className="px-6 py-5 font-bold text-indigo-600 text-xs">{task.taskId}</td>
                         <td className="px-6 py-5 max-w-xs truncate text-sm text-slate-700">{task.message}</td>
+                        <td className="px-6 py-5">
+                          <div className="flex items-center gap-2">
+                            <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[9px] font-bold text-slate-500 border border-slate-200">
+                              {(task.updatedBy || task.createdBy || task.user || '?').substring(0, 2).toUpperCase()}
+                            </div>
+                            <span className="text-xs font-medium text-slate-600 truncate max-w-[100px]">{task.updatedBy || task.createdBy || task.user}</span>
+                          </div>
+                        </td>
                         <td className="px-6 py-5">
                           <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase border shadow-sm ${getStatusStyle(task.status)}`}>
                             {task.status}

@@ -120,8 +120,8 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ task, activities, stages, onClo
                 <User size={20} />
               </div>
               <div>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Originator</p>
-                <p className="text-sm font-bold text-slate-800">{task.user}</p>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{task.updatedBy ? 'Updated By' : 'Originator'}</p>
+                <p className="text-sm font-bold text-slate-800">{task.updatedBy || task.createdBy || task.user}</p>
               </div>
             </div>
             <div className="p-4 rounded-xl border border-slate-100 flex items-center gap-4 bg-slate-50/50">
