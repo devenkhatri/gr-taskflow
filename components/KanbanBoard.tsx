@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MoreHorizontal, Plus, User, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Task, TaskStatus } from '../types';
 
@@ -11,6 +10,17 @@ interface KanbanBoardProps {
 
 const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, stages, onTaskClick }) => {
   const [collapsedColumns, setCollapsedColumns] = useState<Set<string>>(new Set());
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  useEffect(() => {
+    if (!isInitialized && stages.length > 0) {
+      const cancelledStage = stages.find(s => s.toLowerCase().includes('cancelled'));
+      if (cancelledStage) {
+        setCollapsedColumns(new Set([cancelledStage]));
+      }
+      setIsInitialized(true);
+    }
+  }, [stages, isInitialized]);
 
   const getStageColor = (stage: string) => {
     const s = stage.toLowerCase();

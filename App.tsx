@@ -6,7 +6,11 @@ import {
 } from 'recharts';
 import {
   Search, Filter, Plus, Clock, AlertCircle, CheckCircle2,
-  Timer, MoreVertical, ExternalLink, Loader2, RefreshCw, LayoutGrid, List, BarChart, Menu, Columns3, Calendar, XCircle, CheckCircle, Sparkles, ArrowUpDown
+  Timer, MoreVertical, ExternalLink, Loader2, RefreshCw, LayoutGrid, List, BarChart, Menu, Columns3, Calendar, XCircle, CheckCircle, Sparkles, ArrowUpDown,
+  ClockPlus,
+  NotepadText,
+  ClipboardCheck,
+  WandSparkles
 } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import StatCard from './components/StatCard';
@@ -447,6 +451,28 @@ const App: React.FC = () => {
     return 'bg-slate-100 text-slate-700 border-slate-200';
   };
 
+  const getStatCardIcon = (status: string) => {
+    const s = status.toLowerCase();
+    if (s.includes('new') || s.includes('incoming')) return <ClockPlus size={24} className="text-amber-600" />;
+    if (s.includes('todo')) return <List size={24} className="text-blue-600" />;
+    if (s.includes('pickup') || s.includes('picked')) return <NotepadText size={24} className="text-purple-600" />;
+    if (s.includes('progress')) return <RefreshCw size={24} className="text-orange-600" />;
+    if (s.includes('created')) return <ClipboardCheck size={24} className="text-green-600" />;
+    if (s.includes('done') || s.includes('complete')) return <CheckCircle2 size={24} className="text-emerald-600" />;
+    return <AlertCircle size={24} className="text-slate-600" />;
+  };
+
+  const getStatCardColor = (status: string) => {
+    const s = status.toLowerCase();
+    if (s.includes('new') || s.includes('incoming')) return 'bg-amber-50';
+    if (s.includes('todo')) return 'bg-blue-50';
+    if (s.includes('pickup') || s.includes('picked')) return 'bg-purple-50';
+    if (s.includes('progress')) return 'bg-orange-50';
+    if (s.includes('created')) return 'bg-blue-50';
+    if (s.includes('done') || s.includes('complete')) return 'bg-emerald-50';
+    return 'bg-slate-50';
+  };
+
   const renderContent = () => {
     switch (viewMode) {
       case 'kanban':
@@ -490,18 +516,22 @@ const App: React.FC = () => {
           <div className="pb-12">
             {viewMode === 'dashboard' && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <StatCard title="Total Tasks" value={stats.total} icon={<AlertCircle size={24} className="text-indigo-600" />} color="bg-indigo-50" />
+                <StatCard title="Total Tasks" value={stats.total} icon={<BarChart size={24} className="text-indigo-600" />} color="bg-indigo-50" />
                 <StatCard title="Completed" value={stats.doneCount} icon={<CheckCircle2 size={24} className="text-green-600" />} color="bg-green-50" />
-                {dynamicStages.slice(0, 3).map((stage, idx) => (
-                  <StatCard
-                    key={stage}
-                    title={stage}
-                    value={stats[stage] || 0}
-                    icon={idx === 0 ? <AlertCircle size={24} className="text-blue-600" /> : <Timer size={24} className="text-purple-600" />}
-                    color={idx === 0 ? "bg-blue-50" : "bg-purple-50"}
-                  />
-                ))}
-                <StatCard title="AI Fact Checks" value={stats.aiFactChecks} icon={<CheckCircle size={24} className="text-teal-600" />} color="bg-teal-50" />
+                {dynamicStages.map((stage) => {
+                  // Avoid showing the "Done" stage twice if it's already in the "Completed" card
+                  if (stage.toLowerCase().includes('done') || stage.toLowerCase().includes('complete')) return null;
+                  return (
+                    <StatCard
+                      key={stage}
+                      title={stage}
+                      value={stats[stage] || 0}
+                      icon={getStatCardIcon(stage)}
+                      color={getStatCardColor(stage)}
+                    />
+                  );
+                })}
+                <StatCard title="AI Fact Checks" value={stats.aiFactChecks} icon={<WandSparkles size={24} className="text-teal-600" />} color="bg-teal-50" />
                 <StatCard title="AI Titles Generated" value={stats.aiTitles} icon={<Sparkles size={24} className="text-violet-600" />} color="bg-violet-50" />
               </div>
             )}
