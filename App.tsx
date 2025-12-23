@@ -58,6 +58,7 @@ const App: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [channelList, setChannelList] = useState<{ id: string; name: string; purpose: string; taskEnabled: string; factCheckEnabled: string; aiEnabled: string }[]>([]);
   const [userList, setUserList] = useState<{ id: string; name: string }[]>([]);
+  const [dynamicStages, setDynamicStages] = useState<string[]>([]);
   const [selectedChannel, setSelectedChannel] = useState<string>('All');
   const [dateRange, setDateRange] = useState<{ start: string; end: string }>({ start: '', end: '' });
   const [sortOption, setSortOption] = useState<'latest' | 'oldest' | 'priority' | 'taskid'>('taskid');
@@ -80,14 +81,32 @@ const App: React.FC = () => {
 
       // Fetching from specifically named sheets as per requirement
       // Sheet 1 is usually 'Sheet1' or 'Tasks', Sheet 2 is 'Tasks Activity Log'
-      const [taskRows, logRows, channelRows, userRows] = await Promise.all([
+      const [taskRows, logRows, channelRows, userRows, stageRows] = await Promise.all([
         fetchSheet('Sheet1'),
         fetchSheet('Tasks Activity Log'),
         fetchSheet('Active Channels'),
-        fetchSheet('Users')
+        fetchSheet('Users'),
+        fetchSheet('Emoji → Action Mapping')
       ]);
 
+      // Process Stages
+      const stagesSet = new Set<string>();
+      stagesSet.add('NEW'); // Always include NEW as the first stage
+      if (stageRows && stageRows.length > 0) {
+        // Meaning is in Column C (index 2)
+        stageRows.forEach((row: any) => {
+          if (!row.c || !row.c[2]) return;
+          const meaning = String(row.c[2].v || '').trim();
+          if (meaning && meaning !== 'Meaning') {
+            stagesSet.add(meaning);
+          }
+        });
+      }
+      const stagesList = Array.from(stagesSet);
+      setDynamicStages(stagesList);
+
       const channelMap = new Map<string, string>();
+      // ... (rest of the processing remains similar but using stagesList if needed)
       const userListTemp: { id: string; name: string }[] = [];
       const channelListTemp: { id: string; name: string; purpose: string; taskEnabled: string; factCheckEnabled: string; aiEnabled: string }[] = [];
       if (channelRows && channelRows.length > 0) {
@@ -206,7 +225,7 @@ const App: React.FC = () => {
             message: String(c[2]?.v || ''),
             messageTimestamp: String(c[3]?.v || ''),
             user: String(c[4]?.v || ''),
-            status: (c[5]?.v as TaskStatus) || TaskStatus.NEW,
+            status: String(c[5]?.v || 'NEW'),
             priority: String(c[6]?.v || 'Normal'),
             createdAt: String(c[7]?.v || ''),
             createdBy: String(c[8]?.v || ''),
@@ -400,31 +419,32 @@ const App: React.FC = () => {
   }, [selectedTask, sortedActivities]);
 
   /* Statistics Calculation */
-  const stats = useMemo(() => ({
-    total: filteredTasks.length,
-    todo: filteredTasks.filter(t => t.status === TaskStatus.TODO).length,
-    new: filteredTasks.filter(t => t.status === TaskStatus.NEW).length,
-    pickedUp: filteredTasks.filter(t => t.status === TaskStatus.PICKEDUP).length,
-    done: filteredTasks.filter(t => t.status === TaskStatus.DONE).length,
-    aiFactChecks: activities.filter(a => a.actionType === 'Fact Check Done' || a.actionType?.toLowerCase().includes('fact check')).length,
-    aiTitles: activities.filter(a => a.actionType === 'AI Title Generation Done').length,
-  }), [filteredTasks, activities]);
+  const stats = useMemo(() => {
+    const doneStage = dynamicStages.find(s => s.toLowerCase().includes('done') || s.toLowerCase().includes('complete'));
+    return {
+      total: filteredTasks.length,
+      aiFactChecks: activities.filter(a => a.actionType === 'Fact Check Done' || a.actionType?.toLowerCase().includes('fact check')).length,
+      aiTitles: activities.filter(a => a.actionType === 'AI Title Generation Done').length,
+      doneCount: doneStage ? filteredTasks.filter(t => t.status === doneStage).length : 0,
+      ...Object.fromEntries(dynamicStages.map(stage => [stage, filteredTasks.filter(t => t.status === stage).length]))
+    };
+  }, [filteredTasks, activities, dynamicStages]);
 
-  const chartData = [
-    { name: 'Incoming', value: stats.new },
-    { name: 'ToDo', value: stats.todo },
-    { name: 'PickedUp', value: stats.pickedUp },
-    { name: 'Done', value: stats.done },
-  ];
+  const chartData = useMemo(() => {
+    return dynamicStages.map(stage => ({
+      name: stage,
+      value: stats[stage] || 0
+    }));
+  }, [dynamicStages, stats]);
 
-  const getStatusStyle = (status: TaskStatus) => {
-    switch (status) {
-      case TaskStatus.NEW: return 'bg-blue-100 text-blue-700 border-blue-200';
-      case TaskStatus.TODO: return 'bg-yellow-100 text-yellow-700 border-blue-200';
-      case TaskStatus.PICKEDUP: return 'bg-purple-100 text-purple-700 border-purple-200';
-      case TaskStatus.DONE: return 'bg-green-100 text-green-700 border-green-200';
-      default: return 'bg-slate-100 text-slate-700 border-slate-200';
-    }
+  const getStatusStyle = (status: string) => {
+    const s = status.toLowerCase();
+    if (s.includes('new') || s.includes('incoming')) return 'bg-blue-100 text-blue-700 border-blue-200';
+    if (s.includes('todo')) return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+    if (s.includes('pickup') || s.includes('picked')) return 'bg-purple-100 text-purple-700 border-purple-200';
+    if (s.includes('progress')) return 'bg-orange-100 text-orange-700 border-orange-200';
+    if (s.includes('done') || s.includes('complete')) return 'bg-green-100 text-green-700 border-green-200';
+    return 'bg-slate-100 text-slate-700 border-slate-200';
   };
 
   const renderContent = () => {
@@ -432,7 +452,7 @@ const App: React.FC = () => {
       case 'kanban':
         return (
           <div className="h-full overflow-hidden">
-            <KanbanBoard tasks={filteredTasks} onTaskClick={setSelectedTask} />
+            <KanbanBoard tasks={filteredTasks} stages={dynamicStages} onTaskClick={setSelectedTask} />
           </div>
         );
       case 'tasks':
@@ -440,6 +460,7 @@ const App: React.FC = () => {
           <AllTasksView
             tasks={filteredTasks}
             activities={sortedActivities}
+            stages={dynamicStages}
             sortOption={sortOption}
             onTaskClick={setSelectedTask}
           />
@@ -470,9 +491,16 @@ const App: React.FC = () => {
             {viewMode === 'dashboard' && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <StatCard title="Total Tasks" value={stats.total} icon={<AlertCircle size={24} className="text-indigo-600" />} color="bg-indigo-50" />
-                <StatCard title="Incoming" value={stats.new} icon={<Timer size={24} className="text-blue-600" />} color="bg-blue-50" />
-                <StatCard title="In Progress" value={stats.pickedUp} icon={<MoreVertical size={24} className="text-purple-600" />} color="bg-purple-50" />
-                <StatCard title="Completed" value={stats.done} icon={<CheckCircle2 size={24} className="text-green-600" />} color="bg-green-50" />
+                <StatCard title="Completed" value={stats.doneCount} icon={<CheckCircle2 size={24} className="text-green-600" />} color="bg-green-50" />
+                {dynamicStages.slice(0, 3).map((stage, idx) => (
+                  <StatCard
+                    key={stage}
+                    title={stage}
+                    value={stats[stage] || 0}
+                    icon={idx === 0 ? <AlertCircle size={24} className="text-blue-600" /> : <Timer size={24} className="text-purple-600" />}
+                    color={idx === 0 ? "bg-blue-50" : "bg-purple-50"}
+                  />
+                ))}
                 <StatCard title="AI Fact Checks" value={stats.aiFactChecks} icon={<CheckCircle size={24} className="text-teal-600" />} color="bg-teal-50" />
                 <StatCard title="AI Titles Generated" value={stats.aiTitles} icon={<Sparkles size={24} className="text-violet-600" />} color="bg-violet-50" />
               </div>
@@ -756,6 +784,7 @@ const App: React.FC = () => {
         <TaskDetail
           task={selectedTask}
           activities={taskActivities}
+          stages={dynamicStages}
           onClose={() => setSelectedTask(null)}
         />
       )}

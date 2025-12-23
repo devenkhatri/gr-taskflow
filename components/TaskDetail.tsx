@@ -7,19 +7,19 @@ import StageTracker from './StageTracker';
 interface TaskDetailProps {
   task: Task;
   activities: TaskActivity[];
+  stages: string[];
   onClose: () => void;
 }
 
-const TaskDetail: React.FC<TaskDetailProps> = ({ task, activities, onClose }) => {
+const TaskDetail: React.FC<TaskDetailProps> = ({ task, activities, stages, onClose }) => {
   const getStatusColor = (status: TaskStatus) => {
-    switch (status) {
-      case TaskStatus.NEW: return 'bg-blue-100 text-blue-700';
-      case TaskStatus.TODO: return 'bg-yellow-100 text-yellow-700';
-      case TaskStatus.PICKEDUP: return 'bg-purple-100 text-purple-700';
-      case TaskStatus.IN_PROGRESS: return 'bg-orange-100 text-orange-700';
-      case TaskStatus.DONE: return 'bg-green-100 text-green-700';
-      default: return 'bg-slate-100 text-slate-700';
-    }
+    const s = status.toLowerCase();
+    if (s.includes('new') || s.includes('incoming')) return 'bg-blue-100 text-blue-700';
+    if (s.includes('todo')) return 'bg-yellow-100 text-yellow-700';
+    if (s.includes('pickup') || s.includes('picked')) return 'bg-purple-100 text-purple-700';
+    if (s.includes('progress')) return 'bg-orange-100 text-orange-700';
+    if (s.includes('done') || s.includes('complete')) return 'bg-green-100 text-green-700';
+    return 'bg-slate-100 text-slate-700';
   };
 
   // Improved date parsing for Google's weird timestamp strings
@@ -98,7 +98,7 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ task, activities, onClose }) =>
               <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse"></div>
               Task Lifecycle
             </h3>
-            <StageTracker currentStatus={task.status} activities={activities} />
+            <StageTracker currentStatus={task.status} activities={activities} stages={stages} />
           </section>
 
           {/* Meta Info Grid */}

@@ -5,19 +5,28 @@ import { Task, TaskStatus } from '../types';
 
 interface KanbanBoardProps {
   tasks: Task[];
+  stages: string[];
   onTaskClick: (task: Task) => void;
 }
 
-const COLUMNS = [
-  { id: TaskStatus.NEW, label: 'Incoming', color: 'bg-blue-500' },
-  { id: TaskStatus.TODO, label: 'To Do', color: 'bg-yellow-500' },
-  { id: TaskStatus.PICKEDUP, label: 'Picked Up', color: 'bg-purple-500' },
-  { id: TaskStatus.IN_PROGRESS, label: 'In Progress', color: 'bg-orange-500' },
-  { id: TaskStatus.DONE, label: 'Completed', color: 'bg-emerald-500' },
-];
-
-const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, onTaskClick }) => {
+const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, stages, onTaskClick }) => {
   const [collapsedColumns, setCollapsedColumns] = useState<Set<string>>(new Set());
+
+  const getStageColor = (stage: string) => {
+    const s = stage.toLowerCase();
+    if (s.includes('new') || s.includes('incoming')) return 'bg-blue-500';
+    if (s.includes('todo')) return 'bg-yellow-500';
+    if (s.includes('pickup') || s.includes('picked')) return 'bg-purple-500';
+    if (s.includes('progress')) return 'bg-orange-500';
+    if (s.includes('done') || s.includes('complete')) return 'bg-emerald-500';
+    return 'bg-slate-400';
+  };
+
+  const columns = stages.map(stage => ({
+    id: stage,
+    label: stage,
+    color: getStageColor(stage)
+  }));
 
   const toggleColumn = (columnId: string) => {
     const newCollapsed = new Set(collapsedColumns);
@@ -32,7 +41,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, onTaskClick }) => {
   return (
     <div className="h-full overflow-x-auto overflow-y-hidden pb-4">
       <div className="flex gap-4 h-full min-w-max pr-8 px-2">
-        {COLUMNS.map((column) => {
+        {columns.map((column) => {
           const isCollapsed = collapsedColumns.has(column.id);
           const columnTasks = tasks.filter(t => t.status === column.id);
 

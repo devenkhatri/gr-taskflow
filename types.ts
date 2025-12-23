@@ -1,11 +1,5 @@
 
-export enum TaskStatus {
-  NEW = 'NEW',
-  TODO = 'ToDo',
-  PICKEDUP = 'PickedUp',
-  IN_PROGRESS = 'InProgress',
-  DONE = 'Done'
-}
+export type TaskStatus = string;
 
 export interface TaskActivity {
   taskId: string;

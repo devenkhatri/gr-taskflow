@@ -138,9 +138,7 @@ const AICombinedView: React.FC<AICombinedViewProps> = ({ tasks, activities }) =>
                                     <td className="px-6 py-4 align-top">
                                         <p className="text-sm text-slate-700 font-medium line-clamp-2">{item.message}</p>
                                         <div className="flex gap-2 mt-2">
-                                            <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded border ${item.status === TaskStatus.DONE ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                                                'bg-slate-100 text-slate-500 border-slate-200'
-                                                }`}>
+                                            <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded border ${item.status.toLowerCase().includes('done') ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-500 border-slate-100'}`}>
                                                 {item.status}
                                             </span>
                                         </div>

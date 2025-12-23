@@ -6,17 +6,10 @@ import { Task, TaskStatus, TaskActivity } from '../types';
 interface AllTasksViewProps {
   tasks: Task[];
   activities: TaskActivity[];
+  stages: string[];
   sortOption: 'latest' | 'oldest' | 'priority' | 'taskid';
   onTaskClick: (task: Task) => void;
 }
-
-const STAGES = [
-  TaskStatus.NEW,
-  TaskStatus.TODO,
-  TaskStatus.PICKEDUP,
-  TaskStatus.IN_PROGRESS,
-  TaskStatus.DONE
-];
 
 const parseDate = (dateStr: string) => {
   if (!dateStr) return new Date(0);
@@ -39,7 +32,7 @@ const parseDate = (dateStr: string) => {
   return isNaN(d.getTime()) ? new Date(0) : d;
 };
 
-const AllTasksView: React.FC<AllTasksViewProps> = ({ tasks, activities, sortOption, onTaskClick }) => {
+const AllTasksView: React.FC<AllTasksViewProps> = ({ tasks, activities, stages, sortOption, onTaskClick }) => {
   const getTaskReachedStatuses = (task: Task) => {
     const taskLogs = activities.filter(a => a.taskId === task.taskId);
 
@@ -87,7 +80,7 @@ const AllTasksView: React.FC<AllTasksViewProps> = ({ tasks, activities, sortOpti
               <th className="px-2 md:px-6 py-3 md:py-4 sticky left-0 top-0 bg-slate-50 z-40 border-b border-r border-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] min-w-[100px] md:min-w-[300px]">
                 Task Info
               </th>
-              {STAGES.map(stage => (
+              {stages.map(stage => (
                 <th key={stage} className="px-1 md:px-6 py-3 md:py-4 text-center sticky top-0 bg-slate-50 z-30 border-b border-slate-100 min-w-[45px] md:min-w-[110px]">
                   <span className="md:hidden">{stage.substring(0, 4)}</span>
                   <span className="hidden md:inline">{stage}</span>
@@ -99,7 +92,7 @@ const AllTasksView: React.FC<AllTasksViewProps> = ({ tasks, activities, sortOpti
             {channelNames.map(channel => (
               <React.Fragment key={channel}>
                 <tr className="bg-slate-50/50">
-                  <td colSpan={STAGES.length + 1} className="px-4 md:px-6 py-2 md:py-3 font-bold text-[9px] md:text-xs text-slate-500 uppercase tracking-widest border-y border-slate-100 sticky left-0 z-10 bg-slate-50/50 backdrop-blur-sm">
+                  <td colSpan={stages.length + 1} className="px-4 md:px-6 py-2 md:py-3 font-bold text-[9px] md:text-xs text-slate-500 uppercase tracking-widest border-y border-slate-100 sticky left-0 z-10 bg-slate-50/50 backdrop-blur-sm">
                     {channel}
                   </td>
                 </tr>
@@ -125,7 +118,7 @@ const AllTasksView: React.FC<AllTasksViewProps> = ({ tasks, activities, sortOpti
                           </p>
                         </div>
                       </td>
-                      {STAGES.map((stage) => {
+                      {stages.map((stage) => {
                         const hasPassed = reached.has(stage);
                         const isCurrent = task.status === stage;
 
