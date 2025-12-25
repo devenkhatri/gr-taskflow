@@ -41,6 +41,7 @@ const AICombinedView: React.FC<AICombinedViewProps> = ({ tasks, activities }) =>
             return {
                 ...task,
                 factCheckContent: factCheck?.action,
+                factCheckStatus: factCheck?.status,
                 titleGenContent: titleGen?.action,
                 hasFactCheck: !!factCheck,
                 hasTitleGen: !!titleGen
@@ -157,7 +158,14 @@ const AICombinedView: React.FC<AICombinedViewProps> = ({ tasks, activities }) =>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 align-top">
-                                        <p className="text-sm text-slate-700 font-medium line-clamp-2">{item.message}</p>
+                                        <p className="text-sm text-slate-700 font-medium line-clamp-2">
+                                            <span className="md:hidden">
+                                                {item.message.length > 20 ? item.message.substring(0, 20) + '...' : item.message}
+                                            </span>
+                                            <span className="hidden md:inline">
+                                                {item.message.length > 70 ? item.message.substring(0, 70) + '...' : item.message}
+                                            </span>
+                                        </p>
                                         <div className="flex gap-2 mt-2 items-center">
                                             {(() => {
                                                 const s = item.status.toLowerCase();
@@ -183,14 +191,14 @@ const AICombinedView: React.FC<AICombinedViewProps> = ({ tasks, activities }) =>
                                     <td className="px-6 py-4 align-top">
                                         <div className="flex flex-col gap-2">
                                             <div className={`flex items-center gap-2 text-xs font-medium px-2 py-1.5 rounded-lg border ${item.hasFactCheck
-                                                ? (item.factCheckContent?.toLowerCase().includes('fake123')
-                                                    ? 'bg-red-50 text-red-700 border-red-100'
-                                                    : 'bg-teal-50 text-teal-700 border-teal-100')
+                                                ? (item.factCheckStatus === 'Legit'
+                                                    ? 'bg-teal-50 text-teal-700 border-teal-100'
+                                                    : 'bg-red-50 text-red-700 border-red-100')
                                                 : 'bg-slate-50 text-slate-400 border-slate-100'
                                                 }`}>
                                                 <CheckCircle size={14} className={
                                                     item.hasFactCheck
-                                                        ? (item.factCheckContent?.toLowerCase().includes('fake123') ? 'text-red-500' : 'text-teal-500')
+                                                        ? (item.factCheckStatus === 'Legit' ? 'text-teal-500' : 'text-red-500')
                                                         : 'text-slate-300'
                                                 } />
                                                 Fact Check
@@ -213,9 +221,9 @@ const AICombinedView: React.FC<AICombinedViewProps> = ({ tasks, activities }) =>
                                                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
                                                     <h4 className="flex items-center gap-2 text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">
                                                         <CheckCircle size={16} className={
-                                                            item.hasFactCheck && item.factCheckContent?.toLowerCase().includes('fake123')
-                                                                ? "text-red-500"
-                                                                : "text-teal-500"
+                                                            item.hasFactCheck && item.factCheckStatus === 'Legit'
+                                                                ? "text-teal-500"
+                                                                : "text-red-500"
                                                         } />
                                                         Fact Check Result
                                                     </h4>

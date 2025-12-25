@@ -79,6 +79,8 @@ const ActivityLogsView: React.FC<ActivityLogsViewProps> = ({ tasks, activities, 
     if (s.includes('progress')) return 'text-orange-600 bg-orange-50';
     if (s.includes('created') || s.includes('completed')) return 'text-indigo-600 bg-indigo-50';
     if (s.includes('done') || s.includes('complete') || s.includes('published')) return 'text-emerald-600 bg-emerald-50';
+    if (s === 'legit') return 'text-teal-600 bg-teal-50 border-teal-100';
+    if (s === 'fake') return 'text-red-600 bg-red-50 border-red-100';
     return 'text-slate-600 bg-slate-50';
   };
 

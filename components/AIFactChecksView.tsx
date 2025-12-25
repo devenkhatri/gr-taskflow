@@ -40,6 +40,17 @@ const AIFactChecksView: React.FC<AIFactChecksViewProps> = ({ activities }) => {
                                     </span>
                                 </td>
                                 <td className="px-6 py-4">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        {log.status && (
+                                            <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded border ${log.status === 'Legit'
+                                                ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                                                : 'bg-red-50 text-red-700 border-red-100'
+                                                }`}>
+                                                {log.status}
+                                            </span>
+                                        )}
+                                        <span className="text-[10px] text-slate-400 font-bold">• {log.user}</span>
+                                    </div>
                                     <div className="prose prose-sm max-w-none text-slate-600 bg-slate-50 p-4 rounded-xl border border-slate-100 text-xs font-mono">
                                         <ReactMarkdown>{log.action}</ReactMarkdown>
                                     </div>

@@ -497,6 +497,8 @@ const App: React.FC = () => {
     if (s.includes('progress')) return 'bg-orange-100 text-orange-700 border-orange-200';
     if (s.includes('created') || s.includes('completed')) return 'bg-indigo-100 text-indigo-700 border-indigo-200';
     if (s.includes('done') || s.includes('complete') || s.includes('published')) return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+    if (s === 'legit') return 'bg-teal-100 text-teal-700 border-teal-200';
+    if (s === 'fake') return 'bg-red-100 text-red-700 border-red-200';
     return 'bg-slate-100 text-slate-700 border-slate-200';
   };
 
