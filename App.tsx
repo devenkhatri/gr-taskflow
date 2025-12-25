@@ -27,7 +27,7 @@ import LoginScreen from './components/LoginScreen';
 import { Task, TaskStatus, TaskActivity } from './types';
 
 const COLORS = ['#4f46e5', '#8b5cf6', '#f59e0b', '#3b82f6', '#10b981'];
-const SHEET_ID = '1lPpH7ZRofix3JCRN1zQyXeypvttFQ-DMkeYfy-FaB8Y';
+const SHEET_ID = import.meta.env.VITE_SHEET_ID || '';
 
 const parseDate = (dateStr: string) => {
   if (!dateStr) return new Date(0);

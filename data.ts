@@ -2,7 +2,7 @@
 import { Task, TaskActivity } from './types';
 
 // Configuration
-export const APP_PASSWORD = 'admin'; // Change this password as needed
+export const APP_PASSWORD = import.meta.env.VITE_APP_PASSWORD || 'admin'; // Change this password as needed
 
 // Shared Constants
 export const EMPTY_TASKS: Task[] = [];
