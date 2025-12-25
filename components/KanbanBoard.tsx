@@ -2,6 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { MoreHorizontal, Plus, User, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
 import { Task, TaskStatus } from '../types';
 
+const formatStatus = (status: string) => {
+  const s = status.toLowerCase();
+  if (s === 'created') return 'Completed';
+  if (s === 'done') return 'Published';
+  return status;
+};
+
 interface KanbanBoardProps {
   tasks: Task[];
   stages: string[];
@@ -28,14 +35,14 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, stages, onTaskClick })
     if (s.includes('todo')) return 'bg-blue-500';
     if (s.includes('pickup') || s.includes('picked')) return 'bg-purple-500';
     if (s.includes('progress')) return 'bg-orange-500';
-    if (s.includes('created')) return 'bg-indigo-500';
-    if (s.includes('done') || s.includes('complete')) return 'bg-emerald-500';
+    if (s.includes('created') || s.includes('completed')) return 'bg-indigo-500';
+    if (s.includes('done') || s.includes('complete') || s.includes('published')) return 'bg-emerald-500';
     return 'bg-slate-400';
   };
 
   const columns = stages.map(stage => ({
     id: stage,
-    label: stage,
+    label: formatStatus(stage),
     color: getStageColor(stage)
   }));
 

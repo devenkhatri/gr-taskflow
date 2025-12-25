@@ -4,6 +4,13 @@ import { History, MessageSquare, User as UserIcon, Clock, ChevronRight, Activity
 import ReactMarkdown from 'react-markdown';
 import { Task, TaskStatus, TaskActivity } from '../types';
 
+const formatStatus = (status: string) => {
+  const s = status.toLowerCase();
+  if (s === 'created') return 'Completed';
+  if (s === 'done') return 'Published';
+  return status;
+};
+
 interface ActivityLogsViewProps {
   tasks: Task[];
   activities: TaskActivity[];
@@ -70,8 +77,8 @@ const ActivityLogsView: React.FC<ActivityLogsViewProps> = ({ tasks, activities, 
     if (s.includes('todo')) return 'text-blue-600 bg-blue-50';
     if (s.includes('pickup') || s.includes('picked')) return 'text-purple-600 bg-purple-50';
     if (s.includes('progress')) return 'text-orange-600 bg-orange-50';
-    if (s.includes('created')) return 'text-indigo-600 bg-indigo-50';
-    if (s.includes('done') || s.includes('complete')) return 'text-emerald-600 bg-emerald-50';
+    if (s.includes('created') || s.includes('completed')) return 'text-indigo-600 bg-indigo-50';
+    if (s.includes('done') || s.includes('complete') || s.includes('published')) return 'text-emerald-600 bg-emerald-50';
     return 'text-slate-600 bg-slate-50';
   };
 
@@ -129,7 +136,7 @@ const ActivityLogsView: React.FC<ActivityLogsViewProps> = ({ tasks, activities, 
                       <span className="text-xs font-black text-slate-800 uppercase tracking-tight">{log.actionType}</span>
                       {log.status && (
                         <span className={`text-[9px] px-1.5 py-0.5 rounded-md font-bold uppercase border border-current opacity-80 ${getStatusColor(log.status)}`}>
-                          {log.status}
+                          {formatStatus(log.status)}
                         </span>
                       )}
                     </div>

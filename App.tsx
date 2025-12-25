@@ -50,6 +50,13 @@ const parseDate = (dateStr: string) => {
   return isNaN(d.getTime()) ? new Date(0) : d;
 };
 
+const formatStatus = (status: string) => {
+  const s = status.toLowerCase();
+  if (s === 'created') return 'Completed';
+  if (s === 'done') return 'Published';
+  return status;
+};
+
 const App: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [activities, setActivities] = useState<TaskActivity[]>([]);
@@ -392,8 +399,6 @@ const App: React.FC = () => {
     return ['All', ...Array.from(channels).sort()];
   }, [tasks]);
 
-
-
   const filteredTasks = useMemo(() => {
     const filtered = tasks.filter(task => {
       const matchesSearch = task.taskId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -467,7 +472,7 @@ const App: React.FC = () => {
 
   /* Statistics Calculation */
   const stats = useMemo(() => {
-    const doneStage = dynamicStages.find(s => s.toLowerCase().includes('done') || s.toLowerCase().includes('complete'));
+    const doneStage = dynamicStages.find(s => s.toLowerCase().includes('done') || s.toLowerCase().includes('complete') || s.toLowerCase().includes('published'));
     return {
       total: filteredTasks.length,
       aiFactChecks: activities.filter(a => a.actionType === 'Fact Check Done' || a.actionType?.toLowerCase().includes('fact check')).length,
@@ -479,7 +484,7 @@ const App: React.FC = () => {
 
   const chartData = useMemo(() => {
     return dynamicStages.map(stage => ({
-      name: stage,
+      name: formatStatus(stage),
       value: stats[stage] || 0
     }));
   }, [dynamicStages, stats]);
@@ -490,8 +495,8 @@ const App: React.FC = () => {
     if (s.includes('todo')) return 'bg-blue-100 text-blue-700 border-blue-200';
     if (s.includes('pickup') || s.includes('picked')) return 'bg-purple-100 text-purple-700 border-purple-200';
     if (s.includes('progress')) return 'bg-orange-100 text-orange-700 border-orange-200';
-    if (s.includes('created')) return 'bg-indigo-100 text-indigo-700 border-indigo-200';
-    if (s.includes('done') || s.includes('complete')) return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+    if (s.includes('created') || s.includes('completed')) return 'bg-indigo-100 text-indigo-700 border-indigo-200';
+    if (s.includes('done') || s.includes('complete') || s.includes('published')) return 'bg-emerald-100 text-emerald-700 border-emerald-200';
     return 'bg-slate-100 text-slate-700 border-slate-200';
   };
 
@@ -501,8 +506,8 @@ const App: React.FC = () => {
     if (s.includes('todo')) return <List size={24} className="text-blue-600" />;
     if (s.includes('pickup') || s.includes('picked')) return <NotepadText size={24} className="text-purple-600" />;
     if (s.includes('progress')) return <RefreshCw size={24} className="text-orange-600" />;
-    if (s.includes('created')) return <ClipboardCheck size={24} className="text-indigo-600" />;
-    if (s.includes('done') || s.includes('complete')) return <CheckCircle2 size={24} className="text-emerald-600" />;
+    if (s.includes('created') || s.includes('completed')) return <ClipboardCheck size={24} className="text-indigo-600" />;
+    if (s.includes('done') || s.includes('complete') || s.includes('published')) return <CheckCircle2 size={24} className="text-emerald-600" />;
     return <AlertCircle size={24} className="text-slate-600" />;
   };
 
@@ -512,8 +517,8 @@ const App: React.FC = () => {
     if (s.includes('todo')) return 'bg-blue-50';
     if (s.includes('pickup') || s.includes('picked')) return 'bg-purple-50';
     if (s.includes('progress')) return 'bg-orange-50';
-    if (s.includes('created')) return 'bg-indigo-50';
-    if (s.includes('done') || s.includes('complete')) return 'bg-emerald-50';
+    if (s.includes('created') || s.includes('completed')) return 'bg-indigo-50';
+    if (s.includes('done') || s.includes('complete') || s.includes('published')) return 'bg-emerald-50';
     return 'bg-slate-50';
   };
 
@@ -523,8 +528,8 @@ const App: React.FC = () => {
     if (s.includes('todo')) return '#3b82f6'; // Blue 500
     if (s.includes('pickup') || s.includes('picked')) return '#a855f7'; // Purple 500
     if (s.includes('progress')) return '#f97316'; // Orange 500
-    if (s.includes('created')) return '#6366f1'; // Indigo 500
-    if (s.includes('done') || s.includes('complete')) return '#10b981'; // Emerald 500
+    if (s.includes('created') || s.includes('completed')) return '#6366f1'; // Indigo 500
+    if (s.includes('done') || s.includes('complete') || s.includes('published')) return '#10b981'; // Emerald 500
     return '#94a3b8'; // Slate 400
   };
 
@@ -572,14 +577,11 @@ const App: React.FC = () => {
             {viewMode === 'dashboard' && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <StatCard title="Total Tasks" value={stats.total} icon={<BarChart size={24} className="text-indigo-600" />} color="bg-indigo-50" />
-                <StatCard title="Completed" value={stats.doneCount} icon={<CheckCircle2 size={24} className="text-green-600" />} color="bg-green-50" />
                 {dynamicStages.map((stage) => {
-                  // Avoid showing the "Done" stage twice if it's already in the "Completed" card
-                  if (stage.toLowerCase().includes('done') || stage.toLowerCase().includes('complete')) return null;
                   return (
                     <StatCard
                       key={stage}
-                      title={stage}
+                      title={formatStatus(stage)}
                       value={stats[stage] || 0}
                       icon={getStatCardIcon(stage)}
                       color={getStatCardColor(stage)}
@@ -702,7 +704,7 @@ const App: React.FC = () => {
                         </td>
                         <td className="px-6 py-5">
                           <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase border shadow-sm ${getStatusStyle(task.status)}`}>
-                            {task.status}
+                            {formatStatus(task.status)}
                           </span>
                         </td>
                       </tr>

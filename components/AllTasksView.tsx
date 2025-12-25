@@ -3,6 +3,13 @@ import React from 'react';
 import { Check, MessageSquare, User as UserIcon, ExternalLink } from 'lucide-react';
 import { Task, TaskStatus, TaskActivity } from '../types';
 
+const formatStatus = (status: string) => {
+  const s = status.toLowerCase();
+  if (s === 'created') return 'Completed';
+  if (s === 'done') return 'Published';
+  return status;
+};
+
 interface AllTasksViewProps {
   tasks: Task[];
   activities: TaskActivity[];
@@ -82,8 +89,8 @@ const AllTasksView: React.FC<AllTasksViewProps> = ({ tasks, activities, stages, 
               </th>
               {stages.map(stage => (
                 <th key={stage} className="px-1 md:px-6 py-3 md:py-4 text-center sticky top-0 bg-slate-50 z-30 border-b border-slate-100 min-w-[45px] md:min-w-[110px]">
-                  <span className="md:hidden">{stage.substring(0, 4)}</span>
-                  <span className="hidden md:inline">{stage}</span>
+                  <span className="md:hidden">{formatStatus(stage).substring(0, 4)}</span>
+                  <span className="hidden md:inline">{formatStatus(stage)}</span>
                 </th>
               ))}
             </tr>
@@ -126,7 +133,9 @@ const AllTasksView: React.FC<AllTasksViewProps> = ({ tasks, activities, stages, 
                             <span className="md:hidden">
                               {task.message.length > 20 ? task.message.substring(0, 20) + '...' : task.message}
                             </span>
-                            <span className="hidden md:inline">{task.message}</span>
+                            <span className="hidden md:inline">
+                              {task.message.length > 70 ? task.message.substring(0, 70) + '...' : task.message}
+                            </span>
                           </p>
                         </div>
                       </td>
@@ -145,8 +154,8 @@ const AllTasksView: React.FC<AllTasksViewProps> = ({ tasks, activities, stages, 
                                     stage.toLowerCase().includes('todo') ? 'bg-blue-600 text-white' :
                                       stage.toLowerCase().includes('pickup') || stage.toLowerCase().includes('picked') ? 'bg-purple-600 text-white' :
                                         stage.toLowerCase().includes('progress') ? 'bg-orange-600 text-white' :
-                                          stage.toLowerCase().includes('created') ? 'bg-indigo-600 text-white' :
-                                            stage.toLowerCase().includes('done') || stage.toLowerCase().includes('complete') ? 'bg-emerald-600 text-white' :
+                                          (stage.toLowerCase().includes('created') || stage.toLowerCase().includes('completed')) ? 'bg-indigo-600 text-white' :
+                                            (stage.toLowerCase().includes('done') || stage.toLowerCase().includes('complete') || stage.toLowerCase().includes('published')) ? 'bg-emerald-600 text-white' :
                                               'bg-slate-600 text-white')
                                   : 'bg-emerald-100 text-emerald-600'
                                   } shadow-md ${isCurrent ? 'scale-105 md:scale-110' : ''}`}>

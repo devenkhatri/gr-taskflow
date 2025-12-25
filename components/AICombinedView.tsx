@@ -3,6 +3,13 @@ import { Bot, Search, Filter, Sparkles, CheckCircle, FileText, ChevronDown, Chev
 import ReactMarkdown from 'react-markdown';
 import { Task, TaskActivity, TaskStatus } from '../types';
 
+const formatStatus = (status: string) => {
+    const s = status.toLowerCase();
+    if (s === 'created') return 'Completed';
+    if (s === 'done') return 'Published';
+    return status;
+};
+
 interface AICombinedViewProps {
     tasks: Task[];
     activities: TaskActivity[];
@@ -159,12 +166,12 @@ const AICombinedView: React.FC<AICombinedViewProps> = ({ tasks, activities }) =>
                                                 else if (s.includes('todo')) style = 'bg-blue-100 text-blue-700 border-blue-200';
                                                 else if (s.includes('pickup') || s.includes('picked')) style = 'bg-purple-100 text-purple-700 border-purple-200';
                                                 else if (s.includes('progress')) style = 'bg-orange-100 text-orange-700 border-orange-200';
-                                                else if (s.includes('created')) style = 'bg-indigo-100 text-indigo-700 border-indigo-200';
-                                                else if (s.includes('done') || s.includes('complete')) style = 'bg-emerald-100 text-emerald-700 border-emerald-200';
+                                                else if (s.includes('created') || s.includes('completed')) style = 'bg-indigo-100 text-indigo-700 border-indigo-200';
+                                                else if (s.includes('done') || s.includes('complete') || s.includes('published')) style = 'bg-emerald-100 text-emerald-700 border-emerald-200';
 
                                                 return (
                                                     <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded border ${style}`}>
-                                                        {item.status}
+                                                        {formatStatus(item.status)}
                                                     </span>
                                                 );
                                             })()}

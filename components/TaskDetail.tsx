@@ -3,6 +3,13 @@ import { X, Calendar, User, Hash, MessageSquare, History, Clock, ExternalLink } 
 import { Task, TaskActivity, TaskStatus } from '../types';
 import StageTracker from './StageTracker';
 
+const formatStatus = (status: string) => {
+  const s = status.toLowerCase();
+  if (s === 'created') return 'Completed';
+  if (s === 'done') return 'Published';
+  return status;
+};
+
 interface TaskDetailProps {
   task: Task;
   activities: TaskActivity[];
@@ -29,8 +36,8 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ task, activities, stages, onClo
     if (s.includes('todo')) return 'bg-blue-100 text-blue-700';
     if (s.includes('pickup') || s.includes('picked')) return 'bg-purple-100 text-purple-700';
     if (s.includes('progress')) return 'bg-orange-100 text-orange-700';
-    if (s.includes('created')) return 'bg-indigo-100 text-indigo-700';
-    if (s.includes('done') || s.includes('complete')) return 'bg-green-100 text-green-700';
+    if (s.includes('created') || s.includes('completed')) return 'bg-indigo-100 text-indigo-700';
+    if (s.includes('done') || s.includes('complete') || s.includes('published')) return 'bg-green-100 text-green-700';
     return 'bg-slate-100 text-slate-700';
   };
 
@@ -88,7 +95,7 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ task, activities, stages, onClo
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <span className={`px-4 py-1.5 rounded-full font-bold text-[10px] uppercase shadow-sm border ${getStatusColor(task.status)}`}>
-                {task.status}
+                {formatStatus(task.status)}
               </span>
               <span className="text-sm text-slate-300">|</span>
               <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
@@ -190,7 +197,7 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ task, activities, stages, onClo
                       </div>
                       {activity.status && (
                         <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border ${getStatusColor(activity.status)}`}>
-                          {activity.status}
+                          {formatStatus(activity.status)}
                         </span>
                       )}
                     </div>
