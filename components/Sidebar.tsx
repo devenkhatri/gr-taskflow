@@ -1,9 +1,9 @@
 import React from 'react';
-import { LayoutDashboard, CheckCircle2, ClipboardList, Clock, Settings, User, Columns3, Sparkles, CheckCircle, Bot } from 'lucide-react';
+import { LayoutDashboard, CheckCircle2, ClipboardList, Clock, Settings, User, Columns3, Sparkles, CheckCircle, Bot, Filter } from 'lucide-react';
 
 interface SidebarProps {
-  currentView: 'dashboard' | 'kanban' | 'tasks' | 'logs' | 'channels' | 'users' | 'fact-checks' | 'title-generations' | 'ai-combined';
-  onViewChange: (view: 'dashboard' | 'kanban' | 'tasks' | 'logs' | 'channels' | 'users' | 'fact-checks' | 'title-generations' | 'ai-combined') => void;
+  currentView: 'dashboard' | 'kanban' | 'filtered-kanban' | 'tasks' | 'logs' | 'channels' | 'users' | 'fact-checks' | 'title-generations' | 'ai-combined';
+  onViewChange: (view: 'dashboard' | 'kanban' | 'filtered-kanban' | 'tasks' | 'logs' | 'channels' | 'users' | 'fact-checks' | 'title-generations' | 'ai-combined') => void;
 }
 
 const Sidebar: React.FC<SidebarProps & { isOpen: boolean; onClose: () => void }> = ({ currentView, onViewChange, isOpen, onClose }) => {
@@ -57,6 +57,16 @@ const Sidebar: React.FC<SidebarProps & { isOpen: boolean; onClose: () => void }>
           >
             <ClipboardList size={20} className={currentView === 'kanban' ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'} />
             <span>Kanban Board</span>
+          </button>
+          <button
+            onClick={() => handleViewChange('filtered-kanban')}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group w-full text-left ${currentView === 'filtered-kanban'
+              ? 'bg-indigo-50 text-indigo-700 font-semibold shadow-sm shadow-indigo-100'
+              : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+              }`}
+          >
+            <Filter size={20} className={currentView === 'filtered-kanban' ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'} />
+            <span>Filtered Kanban</span>
           </button>
           <button
             onClick={() => handleViewChange('tasks')}

@@ -10,7 +10,8 @@ import {
   ClockPlus,
   NotepadText,
   ClipboardCheck,
-  WandSparkles
+  WandSparkles,
+  UserCircle
 } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import StatCard from './components/StatCard';
@@ -23,6 +24,7 @@ import UsersView from './components/UsersView';
 import AIFactChecksView from './components/AIFactChecksView';
 import AITitleGenerationsView from './components/AITitleGenerationsView';
 import AICombinedView from './components/AICombinedView';
+import FilteredKanbanView from './components/FilteredKanbanView';
 import LoginScreen from './components/LoginScreen';
 import { Task, TaskStatus, TaskActivity } from './types';
 
@@ -65,12 +67,13 @@ const App: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-  const [viewMode, setViewMode] = useState<'dashboard' | 'kanban' | 'tasks' | 'logs' | 'channels' | 'users' | 'fact-checks' | 'title-generations' | 'ai-combined'>('dashboard');
+  const [viewMode, setViewMode] = useState<'dashboard' | 'kanban' | 'filtered-kanban' | 'tasks' | 'logs' | 'channels' | 'users' | 'fact-checks' | 'title-generations' | 'ai-combined'>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [channelList, setChannelList] = useState<{ id: string; name: string; purpose: string; taskEnabled: string; factCheckEnabled: string; aiEnabled: string }[]>([]);
   const [userList, setUserList] = useState<{ id: string; name: string }[]>([]);
   const [dynamicStages, setDynamicStages] = useState<string[]>([]);
   const [selectedChannel, setSelectedChannel] = useState<string>('All');
+  const [selectedCreator, setSelectedCreator] = useState<string>('All');
   const [dateRange, setDateRange] = useState<{ start: string; end: string }>({ start: '', end: '' });
   const [sortOption, setSortOption] = useState<'latest' | 'oldest' | 'priority' | 'taskid'>('taskid');
 
@@ -399,6 +402,15 @@ const App: React.FC = () => {
     return ['All', ...Array.from(channels).sort()];
   }, [tasks]);
 
+  const availableCreators = useMemo(() => {
+    const creators = new Set<string>();
+    tasks.forEach(task => {
+      const creator = task.createdBy || task.user;
+      if (creator) creators.add(creator);
+    });
+    return ['All', ...Array.from(creators).sort()];
+  }, [tasks]);
+
   const filteredTasks = useMemo(() => {
     const filtered = tasks.filter(task => {
       const matchesSearch = task.taskId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -408,6 +420,8 @@ const App: React.FC = () => {
         task.createdBy?.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesChannel = selectedChannel === 'All' || (task.channelName || task.channelId || 'Uncategorized') === selectedChannel;
+
+      const matchesCreator = selectedCreator === 'All' || (task.createdBy || task.user) === selectedCreator;
 
       let matchesDate = true;
       if (dateRange.start || dateRange.end) {
@@ -426,7 +440,7 @@ const App: React.FC = () => {
         }
       }
 
-      return matchesSearch && matchesChannel && matchesDate;
+      return matchesSearch && matchesChannel && matchesCreator && matchesDate;
     });
 
     // Apply Sorting
@@ -446,7 +460,7 @@ const App: React.FC = () => {
           return 0;
       }
     });
-  }, [searchTerm, tasks, selectedChannel, dateRange, sortOption]);
+  }, [searchTerm, tasks, selectedChannel, selectedCreator, dateRange, sortOption]);
 
   const sortedActivities = useMemo(() => {
     return [...activities].sort((a, b) => {
@@ -541,6 +555,12 @@ const App: React.FC = () => {
         return (
           <div className="h-full overflow-hidden">
             <KanbanBoard tasks={filteredTasks} stages={dynamicStages} onTaskClick={setSelectedTask} />
+          </div>
+        );
+      case 'filtered-kanban':
+        return (
+          <div className="h-full overflow-hidden">
+            <FilteredKanbanView tasks={filteredTasks} stages={dynamicStages} onTaskClick={setSelectedTask} />
           </div>
         );
       case 'tasks':
@@ -753,12 +773,13 @@ const App: React.FC = () => {
               <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
                 {viewMode === 'dashboard' ? 'Analytics Overview' :
                   viewMode === 'kanban' ? 'Kanban Board' :
-                    viewMode === 'tasks' ? 'Task Status Matrix' :
-                      viewMode === 'logs' ? 'Audit Logs & Activities' :
-                        viewMode === 'channels' ? 'Channel Management' :
-                          viewMode === 'users' ? 'User Management' :
-                            viewMode === 'fact-checks' ? 'AI Fact Check Analysis' :
-                              viewMode === 'title-generations' ? 'AI Title Generation Done' : 'AI Master View'}
+                    viewMode === 'filtered-kanban' ? 'Filtered Kanban (New, Picked & Completed)' :
+                      viewMode === 'tasks' ? 'Task Status Matrix' :
+                        viewMode === 'logs' ? 'Audit Logs & Activities' :
+                          viewMode === 'channels' ? 'Channel Management' :
+                            viewMode === 'users' ? 'User Management' :
+                              viewMode === 'fact-checks' ? 'AI Fact Check Analysis' :
+                                viewMode === 'title-generations' ? 'AI Title Generation Done' : 'AI Master View'}
               </h1>
               <div className="flex items-center gap-2 mt-1">
                 <p className="hidden xs:block text-slate-500 text-sm">Real-time Task Tracking</p>
@@ -843,6 +864,19 @@ const App: React.FC = () => {
 
             <div className="relative">
               <select
+                value={selectedCreator}
+                onChange={(e) => setSelectedCreator(e.target.value)}
+                className="appearance-none bg-white border border-slate-200 rounded-xl px-4 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm w-full sm:w-48 text-slate-600 font-medium"
+              >
+                {availableCreators.map(creator => (
+                  <option key={creator} value={creator}>{creator === 'All' ? 'All Creators' : creator}</option>
+                ))}
+              </select>
+              <UserCircle className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
+            </div>
+
+            <div className="relative">
+              <select
                 value={sortOption}
                 onChange={(e) => setSortOption(e.target.value as any)}
                 className="appearance-none bg-white border border-slate-200 rounded-xl px-4 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm w-full sm:w-40 text-slate-600 font-medium"
@@ -873,10 +907,11 @@ const App: React.FC = () => {
                 placeholder="End Date"
               />
             </div>
-            {(selectedChannel !== 'All' || dateRange.start || dateRange.end) && (
+            {(selectedChannel !== 'All' || selectedCreator !== 'All' || dateRange.start || dateRange.end) && (
               <button
                 onClick={() => {
                   setSelectedChannel('All');
+                  setSelectedCreator('All');
                   setDateRange({ start: '', end: '' });
                 }}
                 className="flex items-center gap-1 px-3 py-2 text-rose-500 bg-rose-50 hover:bg-rose-100 rounded-xl transition-colors text-xs font-bold uppercase shadow-sm border border-rose-100"
