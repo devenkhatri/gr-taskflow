@@ -916,7 +916,7 @@ const App: React.FC = () => {
                   className="appearance-none bg-white border border-slate-200 rounded-xl px-4 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm w-full sm:w-48 text-slate-600 font-medium"
                 >
                   {availableCreators.map(creator => (
-                    <option key={creator} value={creator}>{creator === 'All' ? 'All Creators' : creator}</option>
+                    <option key={creator} value={creator}>{creator === 'All' ? 'All Originators' : creator}</option>
                   ))}
                 </select>
                 <UserCircle className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
