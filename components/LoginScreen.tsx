@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Lock, ArrowRight } from 'lucide-react';
-import { APP_PASSWORD } from '../data';
+
+const ADMIN_PASSWORD = import.meta.env.VITE_APP_PASSWORD || '';
+const VIEWER_PASSWORD = import.meta.env.VITE_VIEWER_PASSWORD || '';
 
 interface LoginScreenProps {
-    onLogin: () => void;
+    onLogin: (role: 'admin' | 'viewer') => void;
 }
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
@@ -12,8 +14,10 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (password === APP_PASSWORD) {
-            onLogin();
+        if (password === ADMIN_PASSWORD) {
+            onLogin('admin');
+        } else if (password === VIEWER_PASSWORD) {
+            onLogin('viewer');
         } else {
             setError(true);
             setPassword('');

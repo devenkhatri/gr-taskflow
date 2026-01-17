@@ -66,7 +66,7 @@ const Sidebar: React.FC<SidebarProps & { isOpen: boolean; onClose: () => void }>
               }`}
           >
             <Filter size={20} className={currentView === 'filtered-kanban' ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'} />
-            <span>Filtered Kanban</span>
+            <span>Employee Kanban</span>
           </button>
           <button
             onClick={() => handleViewChange('tasks')}

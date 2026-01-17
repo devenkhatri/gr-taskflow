@@ -11,7 +11,8 @@ import {
   NotepadText,
   ClipboardCheck,
   WandSparkles,
-  UserCircle
+  UserCircle,
+  LogOut
 } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import StatCard from './components/StatCard';
@@ -76,6 +77,7 @@ const App: React.FC = () => {
   const [selectedCreator, setSelectedCreator] = useState<string>('All');
   const [dateRange, setDateRange] = useState<{ start: string; end: string }>({ start: '', end: '' });
   const [sortOption, setSortOption] = useState<'latest' | 'oldest' | 'priority' | 'taskid'>('taskid');
+  const [userRole, setUserRole] = useState<'admin' | 'viewer' | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -383,8 +385,14 @@ const App: React.FC = () => {
   /* Data Fetching */
   useEffect(() => {
     const auth = localStorage.getItem('taskflow_auth');
-    if (auth === 'true') {
+    const role = localStorage.getItem('taskflow_role') as 'admin' | 'viewer' | null;
+    if (auth === 'true' && role) {
       setIsAuthenticated(true);
+      setUserRole(role);
+      // Force viewer role to filtered-kanban view
+      if (role === 'viewer') {
+        setViewMode('filtered-kanban');
+      }
     }
     setAuthLoading(false);
   }, []);
@@ -740,9 +748,31 @@ const App: React.FC = () => {
     }
   };
 
-  const handleLogin = () => {
+  const handleLogin = (role: 'admin' | 'viewer') => {
     setIsAuthenticated(true);
+    setUserRole(role);
     localStorage.setItem('taskflow_auth', 'true');
+    localStorage.setItem('taskflow_role', role);
+    // Force viewer role to filtered-kanban view
+    if (role === 'viewer') {
+      setViewMode('filtered-kanban');
+    }
+  };
+
+  // Wrapper for setViewMode that respects viewer role restrictions
+  const handleViewModeChange = (newMode: typeof viewMode) => {
+    // Viewers can only access filtered-kanban
+    if (userRole === 'viewer') {
+      return;
+    }
+    setViewMode(newMode);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('taskflow_auth');
+    localStorage.removeItem('taskflow_role');
+    setIsAuthenticated(false);
+    setUserRole(null);
   };
 
   if (authLoading) return null; // Or a loading spinner
@@ -753,185 +783,206 @@ const App: React.FC = () => {
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
-      <Sidebar
-        currentView={viewMode as any}
-        onViewChange={setViewMode as any}
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-      />
+      {userRole === 'admin' && (
+        <Sidebar
+          currentView={viewMode as any}
+          onViewChange={handleViewModeChange as any}
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+        />
+      )}
 
-      <main className="flex-1 h-full overflow-y-auto p-4 md:p-8 relative md:ml-64">
-        <header className="mb-6 md:mb-8 flex flex-col md:flex-row md:justify-between md:items-center gap-4 sticky top-0 z-30 bg-slate-50/90 backdrop-blur-md py-2">
-          <div className="flex items-center gap-4">
-            <button
-              className="p-2 -ml-2 text-slate-600 hover:bg-white rounded-lg md:hidden transition-colors"
-              onClick={() => setIsSidebarOpen(true)}
-            >
-              <Menu size={24} />
-            </button>
-            <div>
-              <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
-                {viewMode === 'dashboard' ? 'Analytics Overview' :
-                  viewMode === 'kanban' ? 'Kanban Board' :
-                    viewMode === 'filtered-kanban' ? 'Filtered Kanban (New, Picked & Completed)' :
-                      viewMode === 'tasks' ? 'Task Status Matrix' :
-                        viewMode === 'logs' ? 'Audit Logs & Activities' :
-                          viewMode === 'channels' ? 'Channel Management' :
-                            viewMode === 'users' ? 'User Management' :
-                              viewMode === 'fact-checks' ? 'AI Fact Check Analysis' :
-                                viewMode === 'title-generations' ? 'AI Title Generation Done' : 'AI Master View'}
-              </h1>
-              <div className="flex items-center gap-2 mt-1">
-                <p className="hidden xs:block text-slate-500 text-sm">Real-time Task Tracking</p>
-                <span className="hidden xs:block text-slate-300">•</span>
-                <span className="text-xs font-medium text-slate-400 flex items-center gap-1">
-                  <RefreshCw size={10} className={loading ? 'animate-spin' : ''} />
-                  Updated: {lastUpdated.toLocaleTimeString()}
-                </span>
+      <main className={`flex-1 h-full overflow-y-auto p-4 md:p-8 relative ${userRole === 'admin' ? 'md:ml-64' : ''}`}>
+        <header className="mb-6">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-4">
+              {userRole === 'admin' && (
+                <button
+                  className="p-2 -ml-2 text-slate-600 hover:bg-white rounded-lg md:hidden transition-colors"
+                  onClick={() => setIsSidebarOpen(true)}
+                >
+                  <Menu size={24} />
+                </button>
+              )}
+              <div>
+                <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
+                  {viewMode === 'dashboard' ? 'Analytics Overview' :
+                    viewMode === 'kanban' ? 'Kanban Board' :
+                      viewMode === 'filtered-kanban' ? 'Employee Kanban Board' :
+                        viewMode === 'tasks' ? 'Task Status Matrix' :
+                          viewMode === 'logs' ? 'Audit Logs & Activities' :
+                            viewMode === 'channels' ? 'Channel Management' :
+                              viewMode === 'users' ? 'User Management' :
+                                viewMode === 'fact-checks' ? 'AI Fact Check Analysis' :
+                                  viewMode === 'title-generations' ? 'AI Title Generation Done' : 'AI Master View'}
+                </h1>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-xs font-medium text-slate-400 flex items-center gap-1">
+                    <RefreshCw size={10} className={loading ? 'animate-spin' : ''} />
+                    Updated: {lastUpdated.toLocaleTimeString()}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
-          <div className="flex gap-2 sm:gap-4 overflow-x-auto pb-1 sm:pb-0 w-full md:w-auto no-scrollbar">
-            <div className="flex bg-white border border-slate-200 rounded-xl p-1 shadow-sm flex-shrink-0">
+            {userRole === 'admin' && (
+              <div className="flex gap-2 sm:gap-4 overflow-x-auto pb-1 sm:pb-0 no-scrollbar">
+                <div className="flex bg-white border border-slate-200 rounded-xl p-1 shadow-sm flex-shrink-0">
+                  <button
+                    onClick={() => setViewMode('dashboard')}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${viewMode === 'dashboard' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'
+                      }`}
+                  >
+                    <BarChart size={16} />
+                    <span className="hidden sm:inline">Analytics</span>
+                  </button>
+                  <button
+                    onClick={() => setViewMode('kanban')}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${viewMode === 'kanban' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'
+                      }`}
+                  >
+                    <Columns3 size={16} />
+                    <span className="hidden sm:inline">Kanban</span>
+                  </button>
+                  <button
+                    onClick={() => setViewMode('tasks')}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${viewMode === 'tasks' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'
+                      }`}
+                  >
+                    <List size={16} />
+                    <span className="hidden sm:inline">Matrix</span>
+                  </button>
+                  <button
+                    onClick={() => setViewMode('logs')}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${viewMode === 'logs' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'
+                      }`}
+                  >
+                    <Clock size={16} />
+                    <span className="hidden sm:inline">Logs</span>
+                  </button>
+                </div>
+              </div>
+            )}
+            <div className="flex gap-2 sm:gap-4 items-center">
               <button
-                onClick={() => setViewMode('dashboard')}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${viewMode === 'dashboard' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'
-                  }`}
+                onClick={fetchData}
+                disabled={loading}
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors font-medium disabled:opacity-50 shadow-sm flex-shrink-0"
               >
-                <BarChart size={16} />
-                <span className="hidden sm:inline">Analytics</span>
+                <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+                <span className="hidden sm:inline">Refresh</span>
               </button>
               <button
-                onClick={() => setViewMode('kanban')}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${viewMode === 'kanban' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'
-                  }`}
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-slate-600 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-colors font-medium shadow-sm flex-shrink-0"
+                title="Logout"
               >
-                <Columns3 size={16} />
-                <span className="hidden sm:inline">Kanban</span>
-              </button>
-              <button
-                onClick={() => setViewMode('tasks')}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${viewMode === 'tasks' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'
-                  }`}
-              >
-                <List size={16} />
-                <span className="hidden sm:inline">Matrix</span>
-              </button>
-              <button
-                onClick={() => setViewMode('logs')}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${viewMode === 'logs' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'
-                  }`}
-              >
-                <Clock size={16} />
-                <span className="hidden sm:inline">Logs</span>
+                <LogOut size={18} />
+                <span className="hidden sm:inline">Logout</span>
               </button>
             </div>
-            <button
-              onClick={fetchData}
-              disabled={loading}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors font-medium disabled:opacity-50 shadow-sm flex-shrink-0"
-            >
-              <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
-              <span className="hidden sm:inline">Refresh</span>
-            </button>
           </div>
         </header>
 
-        <div className="mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="relative w-full max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            <input
-              type="text"
-              placeholder="Search across your workspace..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm"
-            />
-          </div>
-          <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-            <div className="relative">
-              <select
-                value={selectedChannel}
-                onChange={(e) => setSelectedChannel(e.target.value)}
-                className="appearance-none bg-white border border-slate-200 rounded-xl px-4 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm w-full sm:w-48 text-slate-600 font-medium"
-              >
-                {availableChannels.map(ch => (
-                  <option key={ch} value={ch}>{ch === 'All' ? 'All Channels' : ch}</option>
-                ))}
-              </select>
-              <Filter className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
-            </div>
-
-            <div className="relative">
-              <select
-                value={selectedCreator}
-                onChange={(e) => setSelectedCreator(e.target.value)}
-                className="appearance-none bg-white border border-slate-200 rounded-xl px-4 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm w-full sm:w-48 text-slate-600 font-medium"
-              >
-                {availableCreators.map(creator => (
-                  <option key={creator} value={creator}>{creator === 'All' ? 'All Creators' : creator}</option>
-                ))}
-              </select>
-              <UserCircle className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
-            </div>
-
-            <div className="relative">
-              <select
-                value={sortOption}
-                onChange={(e) => setSortOption(e.target.value as any)}
-                className="appearance-none bg-white border border-slate-200 rounded-xl px-4 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm w-full sm:w-40 text-slate-600 font-medium"
-              >
-                <option value="latest">Latest First</option>
-                <option value="oldest">Oldest First</option>
-                <option value="priority">Priority</option>
-                <option value="taskid">Task ID</option>
-              </select>
-              <ArrowUpDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
-            </div>
-
-            <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2 shadow-sm w-full sm:w-auto">
-              <Calendar size={16} className="text-slate-400" />
+        {userRole === 'admin' && (
+          <div className="mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="relative w-full max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
               <input
-                type="date"
-                value={dateRange.start}
-                onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
-                className="text-sm text-slate-600 bg-transparent focus:outline-none w-full sm:w-auto"
-                placeholder="Start Date"
-              />
-              <span className="text-slate-300">-</span>
-              <input
-                type="date"
-                value={dateRange.end}
-                onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
-                className="text-sm text-slate-600 bg-transparent focus:outline-none w-full sm:w-auto"
-                placeholder="End Date"
+                type="text"
+                placeholder="Search across your workspace..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm"
               />
             </div>
-            {(selectedChannel !== 'All' || selectedCreator !== 'All' || dateRange.start || dateRange.end) && (
-              <button
-                onClick={() => {
-                  setSelectedChannel('All');
-                  setSelectedCreator('All');
-                  setDateRange({ start: '', end: '' });
-                }}
-                className="flex items-center gap-1 px-3 py-2 text-rose-500 bg-rose-50 hover:bg-rose-100 rounded-xl transition-colors text-xs font-bold uppercase shadow-sm border border-rose-100"
-              >
-                <XCircle size={14} />
-                <span className="hidden sm:inline">Clear</span>
-              </button>
-            )}
-          </div>
-        </div>
+            <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+              <div className="relative">
+                <select
+                  value={selectedChannel}
+                  onChange={(e) => setSelectedChannel(e.target.value)}
+                  className="appearance-none bg-white border border-slate-200 rounded-xl px-4 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm w-full sm:w-48 text-slate-600 font-medium"
+                >
+                  {availableChannels.map(ch => (
+                    <option key={ch} value={ch}>{ch === 'All' ? 'All Channels' : ch}</option>
+                  ))}
+                </select>
+                <Filter className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
+              </div>
 
-        {loading && tasks.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-32 space-y-4">
-            <Loader2 className="w-12 h-12 text-indigo-500 animate-spin" />
-            <p className="text-slate-500 font-medium animate-pulse text-lg">Syncing with Google Sheets...</p>
+              <div className="relative">
+                <select
+                  value={selectedCreator}
+                  onChange={(e) => setSelectedCreator(e.target.value)}
+                  className="appearance-none bg-white border border-slate-200 rounded-xl px-4 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm w-full sm:w-48 text-slate-600 font-medium"
+                >
+                  {availableCreators.map(creator => (
+                    <option key={creator} value={creator}>{creator === 'All' ? 'All Creators' : creator}</option>
+                  ))}
+                </select>
+                <UserCircle className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
+              </div>
+
+              <div className="relative">
+                <select
+                  value={sortOption}
+                  onChange={(e) => setSortOption(e.target.value as any)}
+                  className="appearance-none bg-white border border-slate-200 rounded-xl px-4 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm w-full sm:w-40 text-slate-600 font-medium"
+                >
+                  <option value="latest">Latest First</option>
+                  <option value="oldest">Oldest First</option>
+                  <option value="priority">Priority</option>
+                  <option value="taskid">Task ID</option>
+                </select>
+                <ArrowUpDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
+              </div>
+
+              <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2 shadow-sm w-full sm:w-auto">
+                <Calendar size={16} className="text-slate-400" />
+                <input
+                  type="date"
+                  value={dateRange.start}
+                  onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                  className="text-sm text-slate-600 bg-transparent focus:outline-none w-full sm:w-auto"
+                  placeholder="Start Date"
+                />
+                <span className="text-slate-300">-</span>
+                <input
+                  type="date"
+                  value={dateRange.end}
+                  onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                  className="text-sm text-slate-600 bg-transparent focus:outline-none w-full sm:w-auto"
+                  placeholder="End Date"
+                />
+              </div>
+              {(selectedChannel !== 'All' || selectedCreator !== 'All' || dateRange.start || dateRange.end) && (
+                <button
+                  onClick={() => {
+                    setSelectedChannel('All');
+                    setSelectedCreator('All');
+                    setDateRange({ start: '', end: '' });
+                  }}
+                  className="flex items-center gap-1 px-3 py-2 text-rose-500 bg-rose-50 hover:bg-rose-100 rounded-xl transition-colors text-xs font-bold uppercase shadow-sm border border-rose-100"
+                >
+                  <XCircle size={14} />
+                  <span className="hidden sm:inline">Clear</span>
+                </button>
+              )}
+            </div>
           </div>
-        ) : (
-          renderContent()
-        )}
-      </main>
+        )
+        }
+
+        {
+          loading && tasks.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-32 space-y-4">
+              <Loader2 className="w-12 h-12 text-indigo-500 animate-spin" />
+              <p className="text-slate-500 font-medium animate-pulse text-lg">Syncing with Google Sheets...</p>
+            </div>
+          ) : (
+            renderContent()
+          )
+        }
+      </main >
 
       {selectedTask && (
         <TaskDetail
@@ -941,7 +992,7 @@ const App: React.FC = () => {
           onClose={() => setSelectedTask(null)}
         />
       )}
-    </div>
+    </div >
   );
 };
 
