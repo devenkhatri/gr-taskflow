@@ -12,7 +12,7 @@ const FilteredKanbanView: React.FC<FilteredKanbanViewProps> = ({ tasks, stages, 
     // Filter stages to only include "NEW", stages containing "picked", and "Completed" stages
     const filteredStages = stages.filter(stage => {
         const s = stage.toLowerCase();
-        return s === 'new' || s.includes('picked') || s.includes('pickup') || s.includes('completed') || s === 'created';
+        return s === 'new' || s.includes('picked') || s.includes('pickup') || s.includes('completed') || s === 'created' || s.includes('done') || s.includes('published');
     });
 
     return (

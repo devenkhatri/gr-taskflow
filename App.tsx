@@ -883,94 +883,93 @@ const App: React.FC = () => {
           </div>
         </header>
 
-        {userRole === 'admin' && (
-          <div className="mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="relative w-full max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+
+        <div className="mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="relative w-full max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <input
+              type="text"
+              placeholder="Search across your workspace..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm"
+            />
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+            <div className="relative">
+              <select
+                value={selectedChannel}
+                onChange={(e) => setSelectedChannel(e.target.value)}
+                className="appearance-none bg-white border border-slate-200 rounded-xl px-4 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm w-full sm:w-48 text-slate-600 font-medium"
+              >
+                {availableChannels.map(ch => (
+                  <option key={ch} value={ch}>{ch === 'All' ? 'All Channels' : ch}</option>
+                ))}
+              </select>
+              <Filter className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
+            </div>
+
+            <div className="relative">
+              <select
+                value={selectedCreator}
+                onChange={(e) => setSelectedCreator(e.target.value)}
+                className="appearance-none bg-white border border-slate-200 rounded-xl px-4 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm w-full sm:w-48 text-slate-600 font-medium"
+              >
+                {availableCreators.map(creator => (
+                  <option key={creator} value={creator}>{creator === 'All' ? 'All Originators' : creator}</option>
+                ))}
+              </select>
+              <UserCircle className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
+            </div>
+
+            <div className="relative">
+              <select
+                value={sortOption}
+                onChange={(e) => setSortOption(e.target.value as any)}
+                className="appearance-none bg-white border border-slate-200 rounded-xl px-4 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm w-full sm:w-40 text-slate-600 font-medium"
+              >
+                <option value="latest">Latest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="priority">Priority</option>
+                <option value="taskid">Task ID</option>
+              </select>
+              <ArrowUpDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
+            </div>
+
+            <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2 shadow-sm w-full sm:w-auto">
+              <Calendar size={16} className="text-slate-400" />
               <input
-                type="text"
-                placeholder="Search across your workspace..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm"
+                type="date"
+                value={dateRange.start}
+                onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                className="text-sm text-slate-600 bg-transparent focus:outline-none w-full sm:w-auto"
+                placeholder="Start Date"
+              />
+              <span className="text-slate-300">-</span>
+              <input
+                type="date"
+                value={dateRange.end}
+                onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                className="text-sm text-slate-600 bg-transparent focus:outline-none w-full sm:w-auto"
+                placeholder="End Date"
               />
             </div>
-            <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-              <div className="relative">
-                <select
-                  value={selectedChannel}
-                  onChange={(e) => setSelectedChannel(e.target.value)}
-                  className="appearance-none bg-white border border-slate-200 rounded-xl px-4 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm w-full sm:w-48 text-slate-600 font-medium"
-                >
-                  {availableChannels.map(ch => (
-                    <option key={ch} value={ch}>{ch === 'All' ? 'All Channels' : ch}</option>
-                  ))}
-                </select>
-                <Filter className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
-              </div>
-
-              <div className="relative">
-                <select
-                  value={selectedCreator}
-                  onChange={(e) => setSelectedCreator(e.target.value)}
-                  className="appearance-none bg-white border border-slate-200 rounded-xl px-4 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm w-full sm:w-48 text-slate-600 font-medium"
-                >
-                  {availableCreators.map(creator => (
-                    <option key={creator} value={creator}>{creator === 'All' ? 'All Originators' : creator}</option>
-                  ))}
-                </select>
-                <UserCircle className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
-              </div>
-
-              <div className="relative">
-                <select
-                  value={sortOption}
-                  onChange={(e) => setSortOption(e.target.value as any)}
-                  className="appearance-none bg-white border border-slate-200 rounded-xl px-4 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm w-full sm:w-40 text-slate-600 font-medium"
-                >
-                  <option value="latest">Latest First</option>
-                  <option value="oldest">Oldest First</option>
-                  <option value="priority">Priority</option>
-                  <option value="taskid">Task ID</option>
-                </select>
-                <ArrowUpDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
-              </div>
-
-              <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2 shadow-sm w-full sm:w-auto">
-                <Calendar size={16} className="text-slate-400" />
-                <input
-                  type="date"
-                  value={dateRange.start}
-                  onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
-                  className="text-sm text-slate-600 bg-transparent focus:outline-none w-full sm:w-auto"
-                  placeholder="Start Date"
-                />
-                <span className="text-slate-300">-</span>
-                <input
-                  type="date"
-                  value={dateRange.end}
-                  onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
-                  className="text-sm text-slate-600 bg-transparent focus:outline-none w-full sm:w-auto"
-                  placeholder="End Date"
-                />
-              </div>
-              {(selectedChannel !== 'All' || selectedCreator !== 'All' || dateRange.start || dateRange.end) && (
-                <button
-                  onClick={() => {
-                    setSelectedChannel('All');
-                    setSelectedCreator('All');
-                    setDateRange({ start: '', end: '' });
-                  }}
-                  className="flex items-center gap-1 px-3 py-2 text-rose-500 bg-rose-50 hover:bg-rose-100 rounded-xl transition-colors text-xs font-bold uppercase shadow-sm border border-rose-100"
-                >
-                  <XCircle size={14} />
-                  <span className="hidden sm:inline">Clear</span>
-                </button>
-              )}
-            </div>
+            {(selectedChannel !== 'All' || selectedCreator !== 'All' || dateRange.start || dateRange.end) && (
+              <button
+                onClick={() => {
+                  setSelectedChannel('All');
+                  setSelectedCreator('All');
+                  setDateRange({ start: '', end: '' });
+                }}
+                className="flex items-center gap-1 px-3 py-2 text-rose-500 bg-rose-50 hover:bg-rose-100 rounded-xl transition-colors text-xs font-bold uppercase shadow-sm border border-rose-100"
+              >
+                <XCircle size={14} />
+                <span className="hidden sm:inline">Clear</span>
+              </button>
+            )}
           </div>
-        )
-        }
+        </div>
+
 
         {
           loading && tasks.length === 0 ? (
