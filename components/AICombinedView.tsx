@@ -129,139 +129,149 @@ const AICombinedView: React.FC<AICombinedViewProps> = ({ tasks, activities }) =>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {filteredData.map((item) => (
-                            <React.Fragment key={item.taskId}>
-                                <tr
-                                    className={`hover:bg-slate-50/50 transition-colors cursor-pointer ${expandedRow === item.taskId ? 'bg-indigo-50/20' : ''}`}
-                                    onClick={() => toggleExpand(item.taskId)}
-                                >
-                                    <td className="px-6 py-4 text-center">
-                                        {expandedRow === item.taskId ? <ChevronDown size={16} className="text-indigo-500" /> : <ChevronRight size={16} className="text-slate-400" />}
-                                    </td>
-                                    <td className="px-6 py-4 align-top">
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-mono text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded border border-indigo-100 whitespace-nowrap">
-                                                {item.taskId}
-                                            </span>
-                                            {item.messageUrl && (
-                                                <a
-                                                    href={item.messageUrl}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    onClick={(e) => e.stopPropagation()}
-                                                    className="text-slate-400 hover:text-indigo-600 transition-colors"
-                                                    title="View on Slack"
-                                                >
-                                                    <ExternalLink size={14} />
-                                                </a>
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 align-top">
-                                        <p className="text-sm text-slate-700 font-medium line-clamp-2">
-                                            <span className="md:hidden">
-                                                {item.message.length > 20 ? item.message.substring(0, 20) + '...' : item.message}
-                                            </span>
-                                            <span className="hidden md:inline">
-                                                {item.message.length > 70 ? item.message.substring(0, 70) + '...' : item.message}
-                                            </span>
-                                        </p>
-                                        <div className="flex gap-2 mt-2 items-center">
-                                            {(() => {
-                                                const s = item.status.toLowerCase();
-                                                let style = 'bg-slate-50 text-slate-500 border-slate-100';
-                                                if (s.includes('new') || s.includes('incoming')) style = 'bg-amber-100 text-amber-700 border-amber-200';
-                                                else if (s.includes('todo')) style = 'bg-blue-100 text-blue-700 border-blue-200';
-                                                else if (s.includes('pickup') || s.includes('picked')) style = 'bg-purple-100 text-purple-700 border-purple-200';
-                                                else if (s.includes('progress')) style = 'bg-orange-100 text-orange-700 border-orange-200';
-                                                else if (s.includes('created') || s.includes('completed')) style = 'bg-indigo-100 text-indigo-700 border-indigo-200';
-                                                else if (s.includes('done') || s.includes('complete') || s.includes('published')) style = 'bg-emerald-100 text-emerald-700 border-emerald-200';
+                        {filteredData.map((item) => {
+                            const highlightKeyword = import.meta.env.VITE_HIGHLIGHT_KEYWORD;
+                            const isHighlighted = highlightKeyword && item.message && item.message.toLowerCase().includes(highlightKeyword.toLowerCase());
 
-                                                return (
-                                                    <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded border ${style}`}>
-                                                        {formatStatus(item.status)}
-                                                    </span>
-                                                );
-                                            })()}
-                                            <span className="text-[10px] text-slate-400 font-bold truncate">
-                                                • {item.updatedBy || item.createdBy || item.user}
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 align-top">
-                                        <div className="flex flex-col gap-2">
-                                            <div className={`flex items-center gap-2 text-xs font-medium px-2 py-1.5 rounded-lg border ${item.hasFactCheck
-                                                ? (item.factCheckStatus === 'Legit'
-                                                    ? 'bg-teal-50 text-teal-700 border-teal-100'
-                                                    : 'bg-red-50 text-red-700 border-red-100')
-                                                : 'bg-slate-50 text-slate-400 border-slate-100'
-                                                }`}>
-                                                <CheckCircle size={14} className={
-                                                    item.hasFactCheck
-                                                        ? (item.factCheckStatus === 'Legit' ? 'text-teal-500' : 'text-red-500')
-                                                        : 'text-slate-300'
-                                                } />
-                                                Fact Check
-                                                {!item.hasFactCheck && <span className="ml-auto text-slate-300 text-[10px] uppercase">Pending</span>}
+                            return (
+                                <React.Fragment key={item.taskId}>
+                                    <tr
+                                        className={`transition-colors cursor-pointer ${isHighlighted
+                                            ? (expandedRow === item.taskId ? 'bg-amber-100 border-l-4 border-l-amber-500' : 'bg-amber-50 hover:bg-amber-100 border-l-4 border-l-amber-300')
+                                            : (expandedRow === item.taskId ? 'bg-indigo-50/20' : 'hover:bg-slate-50/50')
+                                            }`}
+                                        onClick={() => toggleExpand(item.taskId)}
+                                    >
+                                        <td className="px-6 py-4 text-center">
+                                            {expandedRow === item.taskId ? <ChevronDown size={16} className="text-indigo-500" /> : <ChevronRight size={16} className="text-slate-400" />}
+                                        </td>
+                                        <td className="px-6 py-4 align-top">
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-mono text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded border border-indigo-100 whitespace-nowrap">
+                                                    {item.taskId}
+                                                </span>
+                                                {item.messageUrl && (
+                                                    <a
+                                                        href={item.messageUrl}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        className="text-slate-400 hover:text-indigo-600 transition-colors"
+                                                        title="View on Slack"
+                                                    >
+                                                        <ExternalLink size={14} />
+                                                    </a>
+                                                )}
                                             </div>
-                                            <div className={`flex items-center gap-2 text-xs font-medium px-2 py-1.5 rounded-lg border ${item.hasTitleGen ? 'bg-violet-50 text-violet-700 border-violet-100' : 'bg-slate-50 text-slate-400 border-slate-100'
-                                                }`}>
-                                                <Sparkles size={14} className={item.hasTitleGen ? 'text-violet-500' : 'text-slate-300'} />
-                                                Title Gen
-                                                {!item.hasTitleGen && <span className="ml-auto text-slate-300 text-[10px] uppercase">Pending</span>}
+                                        </td>
+                                        <td className="px-6 py-4 align-top">
+                                            <p className="text-sm text-slate-700 font-medium line-clamp-2">
+                                                <span className="md:hidden">
+                                                    {item.message.length > 20 ? item.message.substring(0, 20) + '...' : item.message}
+                                                </span>
+                                                <span className="hidden md:inline">
+                                                    {item.message.length > 70 ? item.message.substring(0, 70) + '...' : item.message}
+                                                </span>
+                                            </p>
+                                            <div className="flex gap-2 mt-2 items-center">
+                                                {(() => {
+                                                    const s = item.status.toLowerCase();
+                                                    let style = 'bg-slate-50 text-slate-500 border-slate-100';
+                                                    if (s.includes('new') || s.includes('incoming')) style = 'bg-amber-100 text-amber-700 border-amber-200';
+                                                    else if (s.includes('todo')) style = 'bg-blue-100 text-blue-700 border-blue-200';
+                                                    else if (s.includes('pickup') || s.includes('picked')) style = 'bg-purple-100 text-purple-700 border-purple-200';
+                                                    else if (s.includes('progress')) style = 'bg-orange-100 text-orange-700 border-orange-200';
+                                                    else if (s.includes('created') || s.includes('completed')) style = 'bg-indigo-100 text-indigo-700 border-indigo-200';
+                                                    else if (s.includes('done') || s.includes('complete') || s.includes('published')) style = 'bg-emerald-100 text-emerald-700 border-emerald-200';
+
+                                                    return (
+                                                        <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded border ${style}`}>
+                                                            {formatStatus(item.status)}
+                                                        </span>
+                                                    );
+                                                })()}
+                                                <span className="text-[10px] text-slate-400 font-bold truncate">
+                                                    • {item.updatedBy || item.createdBy || item.user}
+                                                </span>
                                             </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {expandedRow === item.taskId && (
-                                    <tr className="bg-slate-50/50">
-                                        <td colSpan={5} className="px-6 py-6 ring-1 ring-slate-100 ring-inset">
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                {/* Fact Check Output */}
-                                                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
-                                                    <h4 className="flex items-center gap-2 text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">
-                                                        <CheckCircle size={16} className={
-                                                            item.hasFactCheck && item.factCheckStatus === 'Legit'
-                                                                ? "text-teal-500"
-                                                                : "text-red-500"
-                                                        } />
-                                                        Fact Check Result
-                                                    </h4>
-                                                    {item.hasFactCheck ? (
-                                                        <div className="prose prose-sm max-w-none text-slate-600 font-mono text-xs bg-slate-50 p-3 rounded-lg border border-slate-100 h-64 overflow-y-auto custom-scrollbar">
-                                                            <ReactMarkdown>{item.factCheckContent || ''}</ReactMarkdown>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="h-64 flex flex-col items-center justify-center text-slate-400 gap-2 bg-slate-50 rounded-lg border border-dashed border-slate-200">
-                                                            <FileText size={24} className="opacity-20" />
-                                                            <span className="text-xs font-medium">No Data Available</span>
-                                                        </div>
-                                                    )}
+                                        </td>
+                                        <td className="px-6 py-4 align-top">
+                                            <div className="flex flex-col gap-2">
+                                                <div className={`flex items-center gap-2 text-xs font-medium px-2 py-1.5 rounded-lg border ${item.hasFactCheck
+                                                    ? (item.factCheckStatus === 'Legit'
+                                                        ? 'bg-teal-50 text-teal-700 border-teal-100'
+                                                        : 'bg-red-50 text-red-700 border-red-100')
+                                                    : 'bg-slate-50 text-slate-400 border-slate-100'
+                                                    }`}>
+                                                    <CheckCircle size={14} className={
+                                                        item.hasFactCheck
+                                                            ? (item.factCheckStatus === 'Legit' ? 'text-teal-500' : 'text-red-500')
+                                                            : 'text-slate-300'
+                                                    } />
+                                                    Fact Check
+                                                    {!item.hasFactCheck && <span className="ml-auto text-slate-300 text-[10px] uppercase">Pending</span>}
                                                 </div>
-
-                                                {/* Title Gen Output */}
-                                                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
-                                                    <h4 className="flex items-center gap-2 text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">
-                                                        <Sparkles size={16} className="text-violet-500" />
-                                                        Generated Titles
-                                                    </h4>
-                                                    {item.hasTitleGen ? (
-                                                        <div className="prose prose-sm max-w-none text-slate-700 text-sm whitespace-pre-wrap bg-violet-50/10 p-3 rounded-lg border border-violet-100 h-64 overflow-y-auto custom-scrollbar">
-                                                            <ReactMarkdown>{item.titleGenContent || ''}</ReactMarkdown>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="h-64 flex flex-col items-center justify-center text-slate-400 gap-2 bg-slate-50 rounded-lg border border-dashed border-slate-200">
-                                                            <LayoutGrid size={24} className="opacity-20" />
-                                                            <span className="text-xs font-medium">No Data Available</span>
-                                                        </div>
-                                                    )}
+                                                <div className={`flex items-center gap-2 text-xs font-medium px-2 py-1.5 rounded-lg border ${item.hasTitleGen ? 'bg-violet-50 text-violet-700 border-violet-100' : 'bg-slate-50 text-slate-400 border-slate-100'
+                                                    }`}>
+                                                    <Sparkles size={14} className={item.hasTitleGen ? 'text-violet-500' : 'text-slate-300'} />
+                                                    Title Gen
+                                                    {!item.hasTitleGen && <span className="ml-auto text-slate-300 text-[10px] uppercase">Pending</span>}
                                                 </div>
                                             </div>
                                         </td>
                                     </tr>
-                                )}
-                            </React.Fragment>
-                        ))}
+                                    {
+                                        expandedRow === item.taskId && (
+                                            <tr className="bg-slate-50/50">
+                                                <td colSpan={5} className="px-6 py-6 ring-1 ring-slate-100 ring-inset">
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                        {/* Fact Check Output */}
+                                                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+                                                            <h4 className="flex items-center gap-2 text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">
+                                                                <CheckCircle size={16} className={
+                                                                    item.hasFactCheck && item.factCheckStatus === 'Legit'
+                                                                        ? "text-teal-500"
+                                                                        : "text-red-500"
+                                                                } />
+                                                                Fact Check Result
+                                                            </h4>
+                                                            {item.hasFactCheck ? (
+                                                                <div className="prose prose-sm max-w-none text-slate-600 font-mono text-xs bg-slate-50 p-3 rounded-lg border border-slate-100 h-64 overflow-y-auto custom-scrollbar">
+                                                                    <ReactMarkdown>{item.factCheckContent || ''}</ReactMarkdown>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="h-64 flex flex-col items-center justify-center text-slate-400 gap-2 bg-slate-50 rounded-lg border border-dashed border-slate-200">
+                                                                    <FileText size={24} className="opacity-20" />
+                                                                    <span className="text-xs font-medium">No Data Available</span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Title Gen Output */}
+                                                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+                                                            <h4 className="flex items-center gap-2 text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">
+                                                                <Sparkles size={16} className="text-violet-500" />
+                                                                Generated Titles
+                                                            </h4>
+                                                            {item.hasTitleGen ? (
+                                                                <div className="prose prose-sm max-w-none text-slate-700 text-sm whitespace-pre-wrap bg-violet-50/10 p-3 rounded-lg border border-violet-100 h-64 overflow-y-auto custom-scrollbar">
+                                                                    <ReactMarkdown>{item.titleGenContent || ''}</ReactMarkdown>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="h-64 flex flex-col items-center justify-center text-slate-400 gap-2 bg-slate-50 rounded-lg border border-dashed border-slate-200">
+                                                                    <LayoutGrid size={24} className="opacity-20" />
+                                                                    <span className="text-xs font-medium">No Data Available</span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )
+                                    }
+                                </React.Fragment>
+                            );
+                        })}
                         {filteredData.length === 0 && (
                             <tr>
                                 <td colSpan={5} className="px-6 py-12 text-center text-slate-400 italic">
@@ -272,7 +282,7 @@ const AICombinedView: React.FC<AICombinedViewProps> = ({ tasks, activities }) =>
                     </tbody>
                 </table>
             </div>
-        </div>
+        </div >
     );
 };
 

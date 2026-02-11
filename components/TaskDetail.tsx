@@ -106,8 +106,16 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ task, activities, stages, onClo
             </div>
 
             <div className="relative">
-              <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500 rounded-full"></div>
-              <p className="text-lg text-slate-700 leading-relaxed font-semibold bg-indigo-50/30 p-5 rounded-r-2xl border-y border-r border-indigo-100/50">
+              {!import.meta.env.VITE_HIGHLIGHT_KEYWORD || !task.message.toLowerCase().includes(import.meta.env.VITE_HIGHLIGHT_KEYWORD.toLowerCase()) ? (
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500 rounded-full"></div>
+              ) : (
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-amber-500 rounded-full shadow-[0_0_8px_rgba(245,158,11,0.6)]"></div>
+              )}
+
+              <p className={`text-lg text-slate-700 leading-relaxed font-semibold p-5 rounded-r-2xl border-y border-r ${import.meta.env.VITE_HIGHLIGHT_KEYWORD && task.message.toLowerCase().includes(import.meta.env.VITE_HIGHLIGHT_KEYWORD.toLowerCase())
+                  ? 'bg-amber-50 border-amber-200 shadow-sm'
+                  : 'bg-indigo-50/30 border-indigo-100/50'
+                }`}>
                 {task.message}
               </p>
             </div>

@@ -113,62 +113,70 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ tasks, stages, onTaskClick })
                     </div>
                   ) : (
                     <>
-                      {columnTasks.length > 0 ? columnTasks.map((task) => (
-                        <div
-                          key={task.taskId + task.messageTimestamp}
-                          onClick={() => onTaskClick(task)}
-                          className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hover:shadow-lg hover:border-indigo-400 hover:-translate-y-0.5 transition-all cursor-pointer group flex-shrink-0"
-                        >
-                          <div className="flex justify-between items-start mb-3">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded shadow-sm border border-indigo-100">
-                                {task.taskId}
-                              </span>
-                              {task.messageUrl && (
-                                <a
-                                  href={task.messageUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="text-slate-400 hover:text-indigo-600 transition-colors"
-                                  title="View on Slack"
-                                >
-                                  <ExternalLink size={10} />
-                                </a>
-                              )}
-                              {task.channelName && (
-                                <span className="text-[9px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 truncate max-w-[100px]">
-                                  {task.channelName}
+                      {columnTasks.length > 0 ? columnTasks.map((task) => {
+                        const highlightKeyword = import.meta.env.VITE_HIGHLIGHT_KEYWORD;
+                        const isHighlighted = highlightKeyword && task.message && task.message.toLowerCase().includes(highlightKeyword.toLowerCase());
+
+                        return (
+                          <div
+                            key={task.taskId + task.messageTimestamp}
+                            onClick={() => onTaskClick(task)}
+                            className={`bg-white p-4 rounded-xl shadow-sm border transition-all cursor-pointer group flex-shrink-0 ${isHighlighted
+                              ? 'border-amber-400 ring-2 ring-amber-100 bg-amber-50 shadow-md transform -translate-y-0.5'
+                              : 'border-slate-200 hover:shadow-lg hover:border-indigo-400 hover:-translate-y-0.5'
+                              }`}
+                          >
+                            <div className="flex justify-between items-start mb-3">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded shadow-sm border border-indigo-100">
+                                  {task.taskId}
+                                </span>
+                                {task.messageUrl && (
+                                  <a
+                                    href={task.messageUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="text-slate-400 hover:text-indigo-600 transition-colors"
+                                    title="View on Slack"
+                                  >
+                                    <ExternalLink size={10} />
+                                  </a>
+                                )}
+                                {task.channelName && (
+                                  <span className="text-[9px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 truncate max-w-[100px]">
+                                    {task.channelName}
+                                  </span>
+                                )}
+                              </div>
+                              <button className="text-slate-300 hover:text-slate-600 transition-colors p-1">
+                                <MoreHorizontal size={14} />
+                              </button>
+                            </div>
+
+                            <p className="text-sm text-slate-700 font-medium line-clamp-4 mb-4 leading-relaxed h-[4.5em]">
+                              {task.message}
+                            </p>
+
+                            <div className="flex items-center justify-between pt-3 border-t border-slate-50 mt-auto">
+                              <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-full bg-indigo-50 flex items-center justify-center text-[10px] font-bold text-indigo-500 border border-indigo-100">
+                                  {(task.updatedBy || task.createdBy || task.user || '?').substring(0, 2).toUpperCase()}
+                                </div>
+                                <span className="text-[10px] font-semibold text-slate-500 truncate max-w-[80px]">{task.updatedBy || task.createdBy || task.user}</span>
+                              </div>
+                              {task.priority && (
+                                <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded shadow-sm ${task.priority.toLowerCase() === 'high'
+                                  ? 'text-rose-600 bg-rose-50 border border-rose-100'
+                                  : 'text-slate-400 bg-slate-50 border border-slate-100'
+                                  }`}>
+                                  {task.priority}
                                 </span>
                               )}
                             </div>
-                            <button className="text-slate-300 hover:text-slate-600 transition-colors p-1">
-                              <MoreHorizontal size={14} />
-                            </button>
                           </div>
-
-                          <p className="text-sm text-slate-700 font-medium line-clamp-4 mb-4 leading-relaxed h-[4.5em]">
-                            {task.message}
-                          </p>
-
-                          <div className="flex items-center justify-between pt-3 border-t border-slate-50 mt-auto">
-                            <div className="flex items-center gap-2">
-                              <div className="w-6 h-6 rounded-full bg-indigo-50 flex items-center justify-center text-[10px] font-bold text-indigo-500 border border-indigo-100">
-                                {(task.updatedBy || task.createdBy || task.user || '?').substring(0, 2).toUpperCase()}
-                              </div>
-                              <span className="text-[10px] font-semibold text-slate-500 truncate max-w-[80px]">{task.updatedBy || task.createdBy || task.user}</span>
-                            </div>
-                            {task.priority && (
-                              <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded shadow-sm ${task.priority.toLowerCase() === 'high'
-                                ? 'text-rose-600 bg-rose-50 border border-rose-100'
-                                : 'text-slate-400 bg-slate-50 border border-slate-100'
-                                }`}>
-                                {task.priority}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      )) : (
+                        );
+                      }) : (
                         <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-2xl p-6 bg-slate-50/50">
                           <p className="text-xs text-slate-400 font-medium text-center">Empty Stage</p>
                         </div>

@@ -86,87 +86,95 @@ const ActivityLogsView: React.FC<ActivityLogsViewProps> = ({ tasks, activities, 
 
   return (
     <div className="space-y-8 pb-12">
-      {groupedActivities.map((group, gIdx) => (
-        <div key={gIdx} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-          {/* Task Header */}
-          <div
-            className="p-4 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors"
-            onClick={() => group.task && onTaskClick(group.task)}
-          >
-            <div className="flex items-center gap-4">
-              <div className="px-3 py-1 bg-indigo-600 text-white rounded-lg font-bold text-[10px] shadow-sm uppercase">
-                {group.task?.taskId || 'Unknown Task'}
+      {groupedActivities.map((group, gIdx) => {
+        const highlightKeyword = import.meta.env.VITE_HIGHLIGHT_KEYWORD;
+        const isHighlighted = highlightKeyword && group.task && group.task.message && group.task.message.toLowerCase().includes(highlightKeyword.toLowerCase());
+
+        return (
+          <div key={gIdx} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+            {/* Task Header */}
+            <div
+              className={`p-4 border-b border-slate-100 flex items-center justify-between cursor-pointer transition-colors ${isHighlighted
+                ? 'bg-amber-100 hover:bg-amber-200 border-l-4 border-l-amber-500'
+                : 'bg-slate-50/50 hover:bg-slate-50'
+                }`}
+              onClick={() => group.task && onTaskClick(group.task)}
+            >
+              <div className="flex items-center gap-4">
+                <div className="px-3 py-1 bg-indigo-600 text-white rounded-lg font-bold text-[10px] shadow-sm uppercase">
+                  {group.task?.taskId || 'Unknown Task'}
+                </div>
+                {group.task?.messageUrl && (
+                  <a
+                    href={group.task.messageUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-slate-400 hover:text-indigo-600 transition-colors"
+                    title="View on Slack"
+                  >
+                    <ExternalLink size={14} />
+                  </a>
+                )}
+                {group.task?.channelName && (
+                  <div className="px-2 py-1 bg-slate-100 text-slate-500 border border-slate-200 rounded-lg font-bold text-[10px] uppercase hidden sm:block">
+                    {group.task.channelName}
+                  </div>
+                )}
+                <p className="text-sm font-semibold text-slate-700 max-w-md truncate">
+                  {group.task?.message || 'Archived or deleted task content'}
+                </p>
               </div>
-              {group.task?.messageUrl && (
-                <a
-                  href={group.task.messageUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="text-slate-400 hover:text-indigo-600 transition-colors"
-                  title="View on Slack"
-                >
-                  <ExternalLink size={14} />
-                </a>
-              )}
-              {group.task?.channelName && (
-                <div className="px-2 py-1 bg-slate-100 text-slate-500 border border-slate-200 rounded-lg font-bold text-[10px] uppercase hidden sm:block">
-                  {group.task.channelName}
-                </div>
-              )}
-              <p className="text-sm font-semibold text-slate-700 max-w-md truncate">
-                {group.task?.message || 'Archived or deleted task content'}
-              </p>
+              <div className="flex items-center gap-2 text-slate-400 group">
+                <span className="text-[10px] font-bold uppercase tracking-widest">Details</span>
+                <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
+              </div>
             </div>
-            <div className="flex items-center gap-2 text-slate-400 group">
-              <span className="text-[10px] font-bold uppercase tracking-widest">Details</span>
-              <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
-            </div>
-          </div>
 
-          {/* Activity List */}
-          <div className="p-6 space-y-6">
-            {group.logs.map((log, lIdx) => (
-              <div key={lIdx} className="relative pl-8 before:absolute before:left-3 before:top-2 before:bottom-0 before:w-px before:bg-slate-100 last:before:hidden">
-                <div className="absolute left-0 top-1 w-6 h-6 rounded-full bg-white border border-slate-200 flex items-center justify-center z-10">
-                  <Activity size={12} className="text-indigo-500" />
-                </div>
-
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-black text-slate-800 uppercase tracking-tight">{log.actionType}</span>
-                      {log.status && (
-                        <span className={`text-[9px] px-1.5 py-0.5 rounded-md font-bold uppercase border border-current opacity-80 ${getStatusColor(log.status)}`}>
-                          {formatStatus(log.status)}
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-sm text-slate-600 font-medium leading-relaxed prose prose-sm max-w-none">
-                      <ReactMarkdown>{log.action}</ReactMarkdown>
-                    </div>
+            {/* Activity List */}
+            <div className="p-6 space-y-6">
+              {group.logs.map((log, lIdx) => (
+                <div key={lIdx} className="relative pl-8 before:absolute before:left-3 before:top-2 before:bottom-0 before:w-px before:bg-slate-100 last:before:hidden">
+                  <div className="absolute left-0 top-1 w-6 h-6 rounded-full bg-white border border-slate-200 flex items-center justify-center z-10">
+                    <Activity size={12} className="text-indigo-500" />
                   </div>
 
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-lg">
-                      <div className="w-5 h-5 rounded bg-indigo-100 flex items-center justify-center text-[9px] font-bold text-indigo-700">
-                        {log.user?.substring(0, 2).toUpperCase() || '?'}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-black text-slate-800 uppercase tracking-tight">{log.actionType}</span>
+                        {log.status && (
+                          <span className={`text-[9px] px-1.5 py-0.5 rounded-md font-bold uppercase border border-current opacity-80 ${getStatusColor(log.status)}`}>
+                            {formatStatus(log.status)}
+                          </span>
+                        )}
                       </div>
-                      <span className="text-[10px] font-bold text-slate-500 uppercase">{log.user}</span>
+                      <div className="text-sm text-slate-600 font-medium leading-relaxed prose prose-sm max-w-none">
+                        <ReactMarkdown>{log.action}</ReactMarkdown>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1 text-slate-400">
-                      <Clock size={12} />
-                      <span className="text-[10px] font-medium">
-                        {parseDate(log.timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                      </span>
+
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-lg">
+                        <div className="w-5 h-5 rounded bg-indigo-100 flex items-center justify-center text-[9px] font-bold text-indigo-700">
+                          {log.user?.substring(0, 2).toUpperCase() || '?'}
+                        </div>
+                        <span className="text-[10px] font-bold text-slate-500 uppercase">{log.user}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-slate-400">
+                        <Clock size={12} />
+                        <span className="text-[10px] font-medium">
+                          {parseDate(log.timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
 
       {groupedActivities.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border-2 border-dashed border-slate-100 text-slate-400">

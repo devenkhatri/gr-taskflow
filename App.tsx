@@ -595,9 +595,9 @@ const App: React.FC = () => {
       case 'users':
         return <UsersView users={userList} />;
       case 'fact-checks':
-        return <AIFactChecksView activities={sortedActivities} />;
+        return <AIFactChecksView activities={sortedActivities} tasks={filteredTasks} />;
       case 'title-generations':
-        return <AITitleGenerationsView activities={sortedActivities} />;
+        return <AITitleGenerationsView activities={sortedActivities} tasks={filteredTasks} />;
       case 'ai-combined':
         return <AICombinedView tasks={filteredTasks} activities={sortedActivities} />;
       case 'dashboard':
@@ -700,45 +700,53 @@ const App: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {filteredTasks.slice(0, 10).map((task) => (
-                      <tr
-                        key={task.taskId + task.messageTimestamp}
-                        className="hover:bg-indigo-50/30 transition-colors cursor-pointer"
-                        onClick={() => setSelectedTask(task)}
-                      >
-                        <td className="px-6 py-5 font-bold text-indigo-600 text-xs">
-                          <div className="flex items-center gap-2">
-                            {task.taskId}
-                            {task.messageUrl && (
-                              <a
-                                href={task.messageUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                className="text-slate-400 hover:text-indigo-600 transition-colors"
-                                title="View on Slack"
-                              >
-                                <ExternalLink size={12} />
-                              </a>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-5 max-w-xs truncate text-sm text-slate-700">{task.message}</td>
-                        <td className="px-6 py-5">
-                          <div className="flex items-center gap-2">
-                            <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[9px] font-bold text-slate-500 border border-slate-200">
-                              {(task.updatedBy || task.createdBy || task.user || '?').substring(0, 2).toUpperCase()}
+                    {filteredTasks.slice(0, 10).map((task) => {
+                      const highlightKeyword = import.meta.env.VITE_HIGHLIGHT_KEYWORD;
+                      const isHighlighted = highlightKeyword && task.message && task.message.toLowerCase().includes(highlightKeyword.toLowerCase());
+
+                      return (
+                        <tr
+                          key={task.taskId + task.messageTimestamp}
+                          className={`transition-colors cursor-pointer ${isHighlighted
+                              ? 'bg-amber-50 hover:bg-amber-100 border-l-4 border-l-amber-400'
+                              : 'hover:bg-indigo-50/30'
+                            }`}
+                          onClick={() => setSelectedTask(task)}
+                        >
+                          <td className="px-6 py-5 font-bold text-indigo-600 text-xs">
+                            <div className="flex items-center gap-2">
+                              {task.taskId}
+                              {task.messageUrl && (
+                                <a
+                                  href={task.messageUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="text-slate-400 hover:text-indigo-600 transition-colors"
+                                  title="View on Slack"
+                                >
+                                  <ExternalLink size={12} />
+                                </a>
+                              )}
                             </div>
-                            <span className="text-xs font-medium text-slate-600 truncate max-w-[100px]">{task.updatedBy || task.createdBy || task.user}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-5">
-                          <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase border shadow-sm ${getStatusStyle(task.status)}`}>
-                            {formatStatus(task.status)}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                          <td className="px-6 py-5 max-w-xs truncate text-sm text-slate-700">{task.message}</td>
+                          <td className="px-6 py-5">
+                            <div className="flex items-center gap-2">
+                              <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[9px] font-bold text-slate-500 border border-slate-200">
+                                {(task.updatedBy || task.createdBy || task.user || '?').substring(0, 2).toUpperCase()}
+                              </div>
+                              <span className="text-xs font-medium text-slate-600 truncate max-w-[100px]">{task.updatedBy || task.createdBy || task.user}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-5">
+                            <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase border shadow-sm ${getStatusStyle(task.status)}`}>
+                              {formatStatus(task.status)}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

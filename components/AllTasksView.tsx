@@ -105,13 +105,22 @@ const AllTasksView: React.FC<AllTasksViewProps> = ({ tasks, activities, stages, 
                 </tr>
                 {tasksByChannel[channel].map((task) => {
                   const reached = getTaskReachedStatuses(task);
+                  const highlightKeyword = import.meta.env.VITE_HIGHLIGHT_KEYWORD;
+                  const isHighlighted = highlightKeyword && task.message && task.message.toLowerCase().includes(highlightKeyword.toLowerCase());
+
                   return (
                     <tr
                       key={task.taskId + task.messageTimestamp}
-                      className="hover:bg-indigo-50/20 transition-colors cursor-pointer group"
+                      className={`transition-colors cursor-pointer group ${isHighlighted
+                          ? 'bg-amber-50 hover:bg-amber-100'
+                          : 'hover:bg-indigo-50/20'
+                        }`}
                       onClick={() => onTaskClick(task)}
                     >
-                      <td className="px-2 md:px-6 py-2 md:py-5 sticky left-0 bg-white group-hover:bg-indigo-50/30 z-20 min-w-[100px] md:min-w-[300px] border-r border-b border-slate-100 shadow-[4px_0_8px_rgba(0,0,0,0.03)]">
+                      <td className={`px-2 md:px-6 py-2 md:py-5 sticky left-0 z-20 min-w-[100px] md:min-w-[300px] border-r border-b border-slate-100 shadow-[4px_0_8px_rgba(0,0,0,0.03)] ${isHighlighted
+                          ? 'bg-amber-50 group-hover:bg-amber-100 border-l-4 border-l-amber-400'
+                          : 'bg-white group-hover:bg-indigo-50/30'
+                        }`}>
                         <div className="flex flex-col gap-0">
                           <div className="flex items-center gap-1">
                             <span className="font-bold text-indigo-600 tracking-tighter text-[9px] md:text-xs">{task.taskId}</span>

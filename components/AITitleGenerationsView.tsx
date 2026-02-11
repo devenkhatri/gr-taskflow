@@ -5,9 +5,10 @@ import { TaskActivity } from '../types';
 
 interface AITitleGenerationsViewProps {
     activities: TaskActivity[];
+    tasks: import('../types').Task[];
 }
 
-const AITitleGenerationsView: React.FC<AITitleGenerationsViewProps> = ({ activities }) => {
+const AITitleGenerationsView: React.FC<AITitleGenerationsViewProps> = ({ activities, tasks }) => {
     const titleGens = useMemo(() => {
         return activities.filter(a => a.actionType === 'AI Title Generation Done');
     }, [activities]);
@@ -32,20 +33,29 @@ const AITitleGenerationsView: React.FC<AITitleGenerationsViewProps> = ({ activit
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {titleGens.map((log, idx) => (
-                            <tr key={idx} className="hover:bg-slate-50/50 transition-colors align-top">
-                                <td className="px-6 py-4">
-                                    <span className="font-mono text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded border border-slate-200 whitespace-nowrap">
-                                        {log.taskId || 'N/A'}
-                                    </span>
-                                </td>
-                                <td className="px-6 py-4">
-                                    <div className="prose prose-sm max-w-none text-slate-700 bg-violet-50/30 p-4 rounded-xl border border-violet-100 text-sm whitespace-pre-wrap font-medium">
-                                        <ReactMarkdown>{log.action}</ReactMarkdown>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
+                        {titleGens.map((log, idx) => {
+                            const task = tasks.find(t => t.taskId === log.taskId);
+                            const highlightKeyword = import.meta.env.VITE_HIGHLIGHT_KEYWORD;
+                            const isHighlighted = highlightKeyword && task && task.message && task.message.toLowerCase().includes(highlightKeyword.toLowerCase());
+
+                            return (
+                                <tr key={idx} className={`transition-colors align-top ${isHighlighted
+                                        ? 'bg-amber-50 hover:bg-amber-100 border-l-4 border-l-amber-400'
+                                        : 'hover:bg-slate-50/50'
+                                    }`}>
+                                    <td className="px-6 py-4">
+                                        <span className="font-mono text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded border border-slate-200 whitespace-nowrap">
+                                            {log.taskId || 'N/A'}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="prose prose-sm max-w-none text-slate-700 bg-violet-50/30 p-4 rounded-xl border border-violet-100 text-sm whitespace-pre-wrap font-medium">
+                                            <ReactMarkdown>{log.action}</ReactMarkdown>
+                                        </div>
+                                    </td>
+                                </tr>
+                            );
+                        })}
                         {titleGens.length === 0 && (
                             <tr>
                                 <td colSpan={4} className="px-6 py-12 text-center text-slate-400 italic">
